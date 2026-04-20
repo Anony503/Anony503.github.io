@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Solo Leveling Productivity App</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    body { background: #0f1115; min-height: 100vh; font-family: 'Fira Mono', 'Consolas', 'monospace'; margin: 0; padding: 0; color: #e0e0e0; overflow-x: hidden; }
+    .sl-panel { background: rgba(24,26,32,0.92); border: 2px solid #a259ff; box-shadow: 0 0 32px 8px #a259ff33, 0 0 0 4px #0f1115 inset; min-height: 100vh; position: relative; }
+    
+    /* Typography & Glows */
+    .sl-status-label { color: #a259ff; font-weight: bold; letter-spacing: 0.08em; font-size: 1.1rem; text-shadow: 0 0 8px #a259ff; }
+    .glow-gold { color: #ecc94b; text-shadow: 0 0 8px #ecc94b; }
+    .glow-red { color: #e53e3e; text-shadow: 0 0 8px #e53e3e; }
+    .glow-purple { color: #b983ff; text-shadow: 0 0 8px #a259ff; }
+    .glow-blue { color: #60a5fa; text-shadow: 0 0 8px #3b82f6; }
+    .sl-glass { background: rgba(30, 32, 45, 0.85); border-radius: 1rem; box-shadow: 0 0 24px 4px rgba(162,89,255,0.1); border: 1px solid #a259ff44; backdrop-filter: blur(4px); }
+    
+    /* Buttons */
+    .sl-btn { background: linear-gradient(90deg, #a259ff 0%, #4f1fff 100%); color: #fff; font-weight: bold; border-radius: 0.5rem; box-shadow: 0 0 8px 2px #a259ff55; transition: all 0.2s; border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;}
+    .sl-btn:hover:not(:disabled) { filter: brightness(1.2); box-shadow: 0 0 16px 4px #a259ff; transform: translateY(-1px); }
+    .sl-btn:disabled { filter: grayscale(0.8); cursor: not-allowed; opacity: 0.6; }
+    
+    /* Navigation */
+    .sl-category-btn { flex: 1; background: rgba(20,22,30,0.8); color: #888; border: 2px solid transparent; padding: 0.75rem; text-align: center; font-weight: bold; font-size: 1rem; border-radius: 0.5rem; transition: all 0.3s; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
+    .sl-category-btn-active { background: rgba(80, 60, 120, 0.2); border-color: #a259ff; color: #fff; box-shadow: 0 0 15px rgba(162, 89, 255, 0.3); text-shadow: 0 0 8px #a259ff; }
+    .sl-category-btn:hover:not(.sl-category-btn-active) { background: rgba(80, 60, 120, 0.1); color: #ccc; }
+    
+    .sl-tab { color: #888; font-weight: bold; border-bottom: 2.5px solid transparent; transition: all 0.2s; font-size: 0.95rem; padding: 0.5rem 1rem; background: none; text-transform: uppercase; cursor: pointer; }
+    .sl-tab-active { color: #fff; border-bottom: 2.5px solid #a259ff; text-shadow: 0 0 8px #a259ff; }
+
+    /* Modals & Inputs */
+    .sl-modal-bg { background: rgba(10, 10, 15, 0.95); backdrop-filter: blur(8px); }
+    .sl-modal-box { background: #1a1c23; border-radius: 1rem; box-shadow: 0 0 40px 10px #a259ff44, 0 0 0 1px #a259ff; padding: 2rem; min-width: 380px; max-width: 90vw; color: #fff; position: relative; max-height: 90vh; overflow-y: auto;}
+    .sl-modal-title { color: #b983ff; font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem; text-shadow: 0 0 8px #a259ff; text-transform: uppercase; }
+    .sl-modal-label { color: #a259ff; font-size: 0.9rem; font-weight: 600; margin-bottom: 0.3rem; display: block; text-transform: uppercase; }
+    .sl-modal-input, .sl-modal-select { width: 100%; margin-bottom: 1.2rem; padding: 0.6rem 0.8rem; border-radius: 0.4rem; background: #23263a; color: #e0e0ff; border: 1px solid #a259ff55; font-size: 1rem; outline: none; transition: box-shadow 0.2s; font-family: inherit; }
+    .sl-modal-input:focus, .sl-modal-select:focus { box-shadow: 0 0 0 2px #a259ff; }
+    
+    /* Stackable Toast Notifications */
+    .toast-container { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.75rem; pointer-events: none; }
+    .toast-item { background: rgba(20, 22, 30, 0.95); backdrop-filter: blur(4px); padding: 1rem 1.5rem; border-radius: 0.5rem; border-left: 4px solid; color: #fff; font-weight: bold; font-size: 0.95rem; box-shadow: 0 10px 25px rgba(0,0,0,0.5); animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; max-width: 350px; pointer-events: auto; }
+    .toast-item.system { border-color: #a259ff; box-shadow: 0 0 15px rgba(162, 89, 255, 0.2); }
+    .toast-item.loot { border-color: #ecc94b; box-shadow: 0 0 15px rgba(236, 201, 75, 0.2); }
+    .toast-item.penalty { border-color: #e53e3e; box-shadow: 0 0 15px rgba(229, 62, 62, 0.2); }
+    .toast-item.error { border-color: #e53e3e; background: rgba(50, 10, 10, 0.98); box-shadow: 0 0 20px rgba(229, 62, 62, 0.6); }
+    .toast-item.combat { border-color: #3b82f6; box-shadow: 0 0 15px rgba(59, 130, 246, 0.2); }
+    @keyframes slideIn { 0% { transform: translateX(120%); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
+
+    /* Custom Elements */
+    .xp-bar-bg { width: 100%; height: 20px; background: #1a1c23; border-radius: 0.5rem; border: 1px solid #a259ff55; overflow: hidden; position: relative; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+    .xp-bar-fill { height: 100%; background: linear-gradient(90deg, #a259ff 0%, #ecc94b 100%); transition: width 0.4s cubic-bezier(.4,2,.6,1); box-shadow: 0 0 12px #a259ff88; }
+    .xp-bar-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.85rem; font-weight: bold; text-shadow: 0 0 4px #000; }
+    
+    .timeline-container { border-left: 2px solid #a259ff55; margin-left: 1rem; padding-left: 1.5rem; position: relative; display: flex; flex-direction: column; gap: 1rem; }
+    .timeline-dot { position: absolute; left: -1.8rem; top: 1.2rem; width: 0.8rem; height: 0.8rem; border-radius: 50%; background: #1a1c23; border: 2px solid #a259ff; transition: all 0.3s; }
+    .timeline-dot-done { background: #ecc94b; border-color: #ecc94b; box-shadow: 0 0 10px #ecc94b; }
+
+    .pulse-red { animation: pulseRed 1.5s infinite alternate; }
+    @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(229,62,62,0.2); border-color: #e53e3e55; } 100% { box-shadow: 0 0 15px 4px rgba(229,62,62,0.6); border-color: #e53e3e; } }
+    .fade-in { animation: fadeIn 0.3s forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+    
+    /* GACHA SLOT MACHINE CSS */
+    .gacha-window {
+        width: 100%; height: 130px;
+        overflow: hidden; position: relative;
+        border: 2px solid #a259ff; border-radius: 0.5rem;
+        background: #0a0b10;
+        box-shadow: 0 0 30px #a259ff44 inset;
+        margin-bottom: 2rem;
+    }
+    .gacha-track {
+        display: flex; gap: 10px; height: 100%;
+        align-items: center; padding: 0;
+        transition: transform 5s cubic-bezier(0.15, 0.9, 0.1, 1);
+    }
+    .gacha-item {
+        min-width: 140px; height: 100px;
+        background: #1a1c23; border-radius: 0.5rem;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        font-weight: 900; text-align: center; font-size: 1rem;
+        border: 2px solid #444; position: relative;
+    }
+    .gacha-item.gold { border-color: #ecc94b; color: #ecc94b; box-shadow: 0 0 15px #ecc94b44 inset; text-shadow: 0 0 5px #ecc94b; }
+    .gacha-item.purple { border-color: #a259ff; color: #a259ff; box-shadow: 0 0 15px #a259ff44 inset; text-shadow: 0 0 5px #a259ff; }
+    .gacha-item.blue { border-color: #60a5fa; color: #60a5fa; box-shadow: 0 0 15px #3b82f644 inset; text-shadow: 0 0 5px #3b82f6; }
+    .gacha-item.red { border-color: #e53e3e; color: #e53e3e; box-shadow: 0 0 15px #e53e3e44 inset; text-shadow: 0 0 5px #e53e3e; }
+    .gacha-item.green { border-color: #10b981; color: #10b981; box-shadow: 0 0 15px #10b98144 inset; text-shadow: 0 0 5px #10b981; }
+    
+    .gacha-target-line {
+        position: absolute; top: 0; bottom: 0; left: 50%;
+        width: 4px; background: #fff;
+        transform: translateX(-50%); z-index: 10;
+        box-shadow: 0 0 15px #fff, 0 0 30px #a259ff;
+    }
+    .gacha-overlay {
+        position: absolute; inset: 0; pointer-events: none;
+        background: linear-gradient(90deg, #0a0b10 0%, transparent 20%, transparent 80%, #0a0b10 100%);
+        z-index: 5;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- IndexedDB Helper for Local Folder Sync -->
+  <script>
+    const idb = {
+      db: null,
+      async init() {
+        if (this.db) return this.db;
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open('slp_vault_db', 1);
+          req.onupgradeneeded = () => req.result.createObjectStore('handles');
+          req.onsuccess = () => { this.db = req.result; resolve(this.db); };
+          req.onerror = () => reject(req.error);
+        });
+      },
+      async get(key) {
+        const db = await this.init();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction('handles', 'readonly');
+          const req = tx.objectStore('handles').get(key);
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(tx.error);
+        });
+      },
+      async set(key, val) {
+        const db = await this.init();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction('handles', 'readwrite');
+          tx.objectStore('handles').put(val, key);
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        });
+      },
+      async del(key) {
+        const db = await this.init();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction('handles', 'readwrite');
+          tx.objectStore('handles').delete(key);
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        });
+      }
+    };
+  </script>
+
+  <script src="https://unpkg.com/react@17/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/remotestoragejs@2.0.0-beta.8/release/remotestorage.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="text/babel" data-presets="react">
+
+    // --- Core Data & Helpers ---
+    const defaultStats = { INT: 0, STR: 0, Focus: 0, Consistency: 0, Mana: 0, Charisma: 0 };
+    const defaultQuests =[
+      { id: 1, name: "Deep Work (2 hrs)", stat: "Focus", statInc: 3, xp: 50, gold: 20, done: false, isPenalty: false, repeatable: false },
+      { id: 2, name: "Physical Training", stat: "STR", statInc: 2, xp: 30, gold: 10, done: false, isPenalty: false, repeatable: false }
+    ];
+    
+    const defaultRaids =[{ id: 1, name: "E-Rank Dungeon (Complete Project)", xpReq: 100, gold: 50, completed: false }];
+    const defaultBosses =[{ id: 1, name: "Procrastination Demon", xpReq: 300, gold: 100, penalty: 5, active: false, completed: false }];
+    const defaultRivals =[
+      { id: 1, name: "Demon King Isagi", type: "Imaginary", rank: "A", focus: 85, str: 80, int: 90, achievements: "Won Blue Lock, Top Striker" },
+      { id: 2, name: "Shadow Monarch Jinwoo", type: "Imaginary", rank: "S", focus: 95, str: 99, int: 85, achievements: "Cleared Double Dungeon, Monarch of Shadows" }
+    ];
+
+    function xpForLevel(level) { return level <= 1 ? 0 : Math.floor(100 * Math.pow(level - 1, 1.3)); }
+    function calcLevel(xp) { let lvl = 1; while (xp >= xpForLevel(lvl + 1)) lvl++; return lvl; }
+
+    const rankOrder =["E", "D", "C", "B", "A", "S", "National"];
+    const defaultRanks =[
+      { tier: "E", level: 1, name: "Weakest Hunter" }, 
+      { tier: "D", level: 10, name: "Dungeon Survivor" },
+      { tier: "C", level: 25, name: "Guild Member" }, 
+      { tier: "B", level: 50, name: "Elite Hunter" },
+      { tier: "A", level: 75, name: "Master Hunter" }, 
+      { tier: "S", level: 90, name: "Shadow Monarch" },
+      { tier: "National", level: 100, name: "World's Apex" }
+    ].map(r => ({ ...r, xp: xpForLevel(r.level) }));
+
+    const defaultLightShopData =[
+      { id: 1, name: "Mana Potion", desc: "Restore 5 Mana", price: 30, stat: "Mana", inc: 5 }, 
+      { id: 2, name: "Focus Scroll", desc: "Boost Focus +3", price: 50, stat: "Focus", inc: 3 }
+    ];
+    const defaultDarkShopData =[
+      { id: 1, name: "Devil's Contract", desc: "Gain 100 XP immediately", price: 5, type: "xp", inc: 100 },
+      { id: 2, name: "Cleanse Penalty", desc: "Remove 1 active penalty", price: 10, type: "cleanse", inc: 0 }
+    ];
+
+    // --- State Management ---
+    const LOCAL_STATE_KEY = "slp_state_v14";
+    const RS_ADDRESS_KEY = "sl_rs_address";
+    const DEVICE_ID_KEY = "sl_device_id";
+
+    function getOrCreateDeviceId() {
+      const existing = localStorage.getItem(DEVICE_ID_KEY);
+      if (existing) return existing;
+      const id = `dev-${Math.random().toString(36).slice(2, 10)}`;
+      localStorage.setItem(DEVICE_ID_KEY, id);
+      return id;
+    }
+
+    function loadState() { 
+      try { const d = JSON.parse(localStorage.getItem(LOCAL_STATE_KEY)); return d || null; } 
+      catch { return null; } 
+    }
+    function saveState(state) { 
+      localStorage.setItem(LOCAL_STATE_KEY, JSON.stringify(state)); 
+    }
+
+    // --- Components ---
+    function ModalWrapper({ title, onClose, children, borderClass="border-purple-500", shadowClass="shadow-[0_0_40px_#a259ff44]" }) {
+      return (
+        <div className="fixed inset-0 flex items-center justify-center z-[1000] sl-modal-bg fade-in p-4">
+          <div className={`sl-modal-box w-full max-w-md border-2 ${borderClass} ${shadowClass}`}>
+            <button className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl font-black transition-colors" onClick={onClose}>&times;</button>
+            <div className="sl-modal-title">{title}</div>
+            {children}
+          </div>
+        </div>
+      );
+    }
+
+    // --- Main App Component ---
+    function App() {
+      const state = loadState() || {};
+      
+      // Authentication System
+      const[appPassword, setAppPassword] = React.useState(state.appPassword || "");
+      const[isUnlocked, setIsUnlocked] = React.useState(!state.appPassword);
+      const [loginInput, setLoginInput] = React.useState("");
+
+      // Game State
+      const[stats, setStats] = React.useState(state.stats || {...defaultStats});
+      const[xp, setXP] = React.useState(state.xp || 0);
+      const [gold, setGold] = React.useState(state.gold || 0);
+      const[darkCrystals, setDarkCrystals] = React.useState(state.darkCrystals || 0);
+      const [streak, setStreak] = React.useState(state.streak || 0);
+      const[lastSpin, setLastSpin] = React.useState(state.lastSpin || null);
+      
+      const[quests, setQuests] = React.useState(state.quests || defaultQuests);
+      const[negativeQuests, setNegativeQuests] = React.useState(state.negativeQuests || []);
+      const[sideMissions, setSideMissions] = React.useState(state.sideMissions || []);
+      const[raids, setRaids] = React.useState(state.raids || defaultRaids);
+      const[bosses, setBosses] = React.useState(state.bosses || defaultBosses);
+      const[rivals, setRivals] = React.useState(state.rivals || defaultRivals);
+      const[ranks, setRanks] = React.useState(state.ranks || defaultRanks);
+      
+      // Custom Shops
+      const[lightShop, setLightShop] = React.useState(state.lightShop || defaultLightShopData);
+      const[darkShop, setDarkShop] = React.useState(state.darkShop || defaultDarkShopData);
+      
+      const[lifeMission, setLifeMission] = React.useState(state.lifeMission || "");
+      const[shortTermMission, setShortTermMission] = React.useState(state.shortTermMission || "");
+      const[roadmap, setRoadmap] = React.useState(state.roadmap || []);
+      const[studyLog, setStudyLog] = React.useState(state.studyLog || []);
+      
+      // Local Folder Sync State
+      const[vaultLinkedName, setVaultLinkedName] = React.useState("");
+      const hasNativeFS = typeof window.showDirectoryPicker === 'function';
+      const fileInputRef = React.useRef(null);
+      const importNoteRef = React.useRef(null);
+      const [ffSyncModal, setFfSyncModal] = React.useState(false);
+      const [pendingLogs, setPendingLogs] = React.useState([]);
+      const [rsAddress, setRsAddress] = React.useState(localStorage.getItem(RS_ADDRESS_KEY) || "");
+      const [rsConnected, setRsConnected] = React.useState(false);
+      const [rsReady, setRsReady] = React.useState(false);
+      const [rsStatus, setRsStatus] = React.useState("Idle");
+      const [deviceId] = React.useState(getOrCreateDeviceId());
+      const [obsidianOwnerDeviceId, setObsidianOwnerDeviceId] = React.useState(state.obsidianOwnerDeviceId || "");
+      const [obsidianOwnerLabel, setObsidianOwnerLabel] = React.useState(state.obsidianOwnerLabel || "");
+      const cloudSyncTimeoutRef = React.useRef(null);
+      const lastCloudPayloadRef = React.useRef("");
+      const rsRef = React.useRef(null);
+      const rsClientRef = React.useRef(null);
+
+      // UI States
+      const[activeCategory, setActiveCategory] = React.useState("System"); 
+      const[systemTab, setSystemTab] = React.useState("Quests"); 
+      const[combatTab, setCombatTab] = React.useState("Raids"); 
+      const[journeyTab, setJourneyTab] = React.useState("Main Arc"); 
+      const[hubTab, setHubTab] = React.useState("Shop"); 
+      const[shopTabType, setShopTabType] = React.useState("light");
+      
+      const[toasts, setToasts] = React.useState([]);
+      const[modals, setModals] = React.useState({ quest: false, darkQuest: false, sideMission: false, raid: false, boss: false, rival: false, duel: null, spin: false, shopItem: false });
+
+      // Gacha Wheel State
+      const[gachaItems, setGachaItems] = React.useState([]);
+      const[gachaOffset, setGachaOffset] = React.useState(0);
+      const[isSpinning, setIsSpinning] = React.useState(false);
+
+      // Startup: Check for existing Vault Handle
+      React.useEffect(() => {
+          idb.get('vault_handle').then(handle => {
+              if (handle) setVaultLinkedName(handle.name);
+          }).catch(console.error);
+      },[]);
+
+      React.useEffect(() => {
+        if (!window.RemoteStorage) {
+          setRsStatus("remoteStorage library not loaded.");
+          return;
+        }
+
+        const rs = new window.RemoteStorage({ cache: true, logging: false });
+        rs.access.claim("sololev", "rw");
+        const client = rs.scope("/sololev/");
+        client.declareType("sl-state", {});
+
+        rs.on("ready", () => setRsReady(true));
+        rs.on("connected", () => {
+          setRsConnected(true);
+          setRsStatus("Connected");
+        });
+        rs.on("not-connected", () => {
+          setRsConnected(false);
+          setRsStatus("Not connected");
+        });
+        rs.on("disconnected", () => {
+          setRsConnected(false);
+          setRsStatus("Disconnected");
+        });
+        rs.on("error", (err) => {
+          setRsStatus(err?.message || "remoteStorage error");
+        });
+
+        rsRef.current = rs;
+        rsClientRef.current = client;
+      }, []);
+
+      const applyImportedState = (incomingState) => {
+        if (!incomingState || typeof incomingState !== "object") return;
+        if (incomingState.appPassword !== undefined) setAppPassword(incomingState.appPassword || "");
+        if (incomingState.stats) setStats({ ...defaultStats, ...incomingState.stats });
+        if (incomingState.xp !== undefined) setXP(incomingState.xp || 0);
+        if (incomingState.gold !== undefined) setGold(incomingState.gold || 0);
+        if (incomingState.darkCrystals !== undefined) setDarkCrystals(incomingState.darkCrystals || 0);
+        if (incomingState.streak !== undefined) setStreak(incomingState.streak || 0);
+        if (incomingState.lastSpin !== undefined) setLastSpin(incomingState.lastSpin || null);
+        if (Array.isArray(incomingState.quests)) setQuests(incomingState.quests);
+        if (Array.isArray(incomingState.negativeQuests)) setNegativeQuests(incomingState.negativeQuests);
+        if (Array.isArray(incomingState.sideMissions)) setSideMissions(incomingState.sideMissions);
+        if (Array.isArray(incomingState.raids)) setRaids(incomingState.raids);
+        if (Array.isArray(incomingState.bosses)) setBosses(incomingState.bosses);
+        if (Array.isArray(incomingState.rivals)) setRivals(incomingState.rivals);
+        if (Array.isArray(incomingState.ranks)) setRanks(incomingState.ranks);
+        if (Array.isArray(incomingState.lightShop)) setLightShop(incomingState.lightShop);
+        if (Array.isArray(incomingState.darkShop)) setDarkShop(incomingState.darkShop);
+        if (incomingState.lifeMission !== undefined) setLifeMission(incomingState.lifeMission || "");
+        if (incomingState.shortTermMission !== undefined) setShortTermMission(incomingState.shortTermMission || "");
+        if (Array.isArray(incomingState.roadmap)) setRoadmap(incomingState.roadmap);
+        if (Array.isArray(incomingState.studyLog)) setStudyLog(incomingState.studyLog);
+        if (incomingState.obsidianOwnerDeviceId !== undefined) setObsidianOwnerDeviceId(incomingState.obsidianOwnerDeviceId || "");
+        if (incomingState.obsidianOwnerLabel !== undefined) setObsidianOwnerLabel(incomingState.obsidianOwnerLabel || "");
+      };
+
+      const pullRemoteStorageState = async (showToast = false) => {
+        if (!rsClientRef.current) return false;
+        try {
+          setRsStatus("Pulling...");
+          const remoteState = await rsClientRef.current.getObject("state.json");
+          if (remoteState && typeof remoteState === "object") {
+            applyImportedState(remoteState);
+            saveState(remoteState);
+            lastCloudPayloadRef.current = JSON.stringify(remoteState);
+            if (showToast) addToast("remoteStorage save loaded.", "system");
+          } else if (showToast) {
+            addToast("No remoteStorage state found yet.", "system");
+          }
+          setRsStatus("Connected");
+          return true;
+        } catch (err) {
+          setRsStatus("Pull failed");
+          if (showToast) addToast("remoteStorage pull failed.", "error");
+          return false;
+        }
+      };
+
+      const pushRemoteStorageState = async (snapshot, showToast = false) => {
+        if (!rsClientRef.current) return false;
+        try {
+          setRsStatus("Pushing...");
+          await rsClientRef.current.storeObject("sl-state", "state.json", snapshot);
+          if (rsRef.current?.startSync) await rsRef.current.startSync();
+          setRsStatus("Connected");
+          if (showToast) addToast("remoteStorage save uploaded.", "system");
+          return true;
+        } catch (err) {
+          setRsStatus("Push failed");
+          if (showToast) addToast("remoteStorage push failed.", "error");
+          return false;
+        }
+      };
+
+      // Save Hook
+      React.useEffect(() => {
+        if (isUnlocked) {
+          const snapshot = { 
+            appPassword, stats, xp, gold, darkCrystals, streak, lastSpin,
+            quests, negativeQuests, sideMissions, raids, bosses, rivals, ranks, 
+            lightShop, darkShop,
+            lifeMission, shortTermMission, roadmap, studyLog,
+            obsidianOwnerDeviceId, obsidianOwnerLabel
+          };
+          saveState(snapshot);
+
+          if (rsConnected && rsClientRef.current) {
+            const payload = JSON.stringify(snapshot);
+            if (payload !== lastCloudPayloadRef.current) {
+              if (cloudSyncTimeoutRef.current) clearTimeout(cloudSyncTimeoutRef.current);
+              cloudSyncTimeoutRef.current = setTimeout(() => {
+                pushRemoteStorageState(snapshot, false);
+              }, 1500);
+              lastCloudPayloadRef.current = payload;
+            }
+          }
+        }
+      },[isUnlocked, appPassword, stats, xp, gold, darkCrystals, streak, lastSpin, quests, negativeQuests, sideMissions, raids, bosses, rivals, ranks, lightShop, darkShop, lifeMission, shortTermMission, roadmap, studyLog, obsidianOwnerDeviceId, obsidianOwnerLabel, rsConnected]);
+
+      React.useEffect(() => {
+        return () => {
+          if (cloudSyncTimeoutRef.current) clearTimeout(cloudSyncTimeoutRef.current);
+        };
+      }, []);
+
+      // --- Actions & Helpers ---
+      const addToast = (msg, type = 'system') => {
+        const id = Date.now() + Math.random();
+        setToasts(prev =>[...prev, { id, msg, type }]);
+        setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+      };
+
+      const toggleModal = (key, val) => setModals(m => ({ ...m, [key]: val }));
+      const deviceLabel = React.useMemo(() => {
+        const ua = navigator.userAgent || "";
+        if (ua.includes("Android")) return "Android Device";
+        if (ua.includes("iPhone") || ua.includes("iPad")) return "iOS Device";
+        if (ua.includes("Windows")) return "Windows Device";
+        if (ua.includes("Macintosh")) return "Mac Device";
+        if (ua.includes("Linux")) return "Linux Device";
+        return "Unknown Device";
+      }, []);
+      const isObsidianOwner = !obsidianOwnerDeviceId || obsidianOwnerDeviceId === deviceId;
+      const connectRemoteStorage = () => {
+        const address = rsAddress.trim();
+        if (!address) {
+          addToast("Enter your remoteStorage address first.", "error");
+          return;
+        }
+        if (!rsRef.current) {
+          addToast("remoteStorage not initialized.", "error");
+          return;
+        }
+        localStorage.setItem(RS_ADDRESS_KEY, address);
+        setRsStatus("Connecting...");
+        rsRef.current.connect(address);
+      };
+      const disconnectRemoteStorage = () => {
+        if (!rsRef.current) return;
+        rsRef.current.disconnect();
+        setRsConnected(false);
+        setRsStatus("Disconnected");
+      };
+
+      function completeQuest(idx) {
+        const q = quests[idx];
+        setQuests(qs => qs.map((quest, i) => {
+            if (i === idx) {
+                return quest.repeatable ? quest : {...quest, done: true};
+            }
+            return quest;
+        }));
+        
+        if (!q.isPenalty) {
+          setStats(s => ({...s,[q.stat]: s[q.stat] + q.statInc}));
+          setXP(x => x + q.xp); setGold(g => g + q.gold);
+          addToast(`Quest Cleared: ${q.name}! +${q.xp}XP, +${q.gold}G`, 'loot');
+        } else {
+          setStats(s => ({...s, [q.stat]: s[q.stat] + q.statInc}));
+          addToast(`Penalty Endured: ${q.name}. System acknowledges your resilience.`, 'system');
+        }
+      }
+
+      function indulgeNegativeQuest(idx) {
+        const q = negativeQuests[idx];
+        setStats(s => ({...s, [q.stat]: Math.max(0, s[q.stat] - q.statDec)}));
+        setXP(x => Math.max(0, x - q.xpDec));
+        setDarkCrystals(d => d + q.dcInc);
+        addToast(`Dark Directive Indulged: ${q.name}. Lost ${q.xpDec}XP, gained ${q.dcInc} DC.`, 'penalty');
+      }
+
+      function completeSideMission(idx) {
+        const sm = sideMissions[idx];
+        if (sm.stat) setStats(s => ({...s,[sm.stat]: s[sm.stat] + sm.statInc}));
+        setXP(x => x + sm.xp);
+        setSideMissions(sms => sms.filter((_, i) => i !== idx));
+        addToast(`Side Mission Accomplished: ${sm.name}! +${sm.xp}XP`, 'loot');
+      }
+
+      // --- Local Folder Sync System (Native File System Access API) ---
+      const linkVaultFolder = async () => {
+          if (!isObsidianOwner) {
+              addToast(`Obsidian logging is locked by ${obsidianOwnerLabel || obsidianOwnerDeviceId}.`, "error");
+              return;
+          }
+          if (!obsidianOwnerDeviceId) {
+              setObsidianOwnerDeviceId(deviceId);
+              setObsidianOwnerLabel(deviceLabel);
+          }
+          if (!hasNativeFS) {
+              // Firefox/Linux: no showDirectoryPicker support
+              setFfSyncModal(true);
+              return;
+          }
+          try {
+              const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+              await idb.set('vault_handle', handle);
+              setVaultLinkedName(handle.name);
+              addToast(`✅ Linked Vault Folder: ${handle.name}`, "system");
+          } catch (e) {
+              console.error(e);
+              if (e.name !== 'AbortError') addToast("❌ Failed to link folder.", "error");
+          }
+      };
+
+      const unlinkVaultFolder = async () => {
+          if (!isObsidianOwner) {
+              addToast("Only the linked owner device can unlink Obsidian sync.", "error");
+              return;
+          }
+          await idb.del('vault_handle');
+          setVaultLinkedName("");
+          setObsidianOwnerDeviceId("");
+          setObsidianOwnerLabel("");
+          addToast("Vault folder unlinked.", "system");
+      };
+
+      const writeToDailyNote = async (content) => {
+          if (!isObsidianOwner) {
+              addToast(`Obsidian log locked to ${obsidianOwnerLabel || obsidianOwnerDeviceId}.`, "error");
+              return false;
+          }
+          try {
+              // Firefox / no native FS: download as .md file
+              if (!hasNativeFS) {
+                  if (!vaultLinkedName) {
+                      addToast("❌ Please set up Vault Sync first in the Hub!", "error");
+                      return false;
+                  }
+                  const dateStr = new Date().toISOString().split('T')[0];
+                  const newLogs = [...pendingLogs, content];
+                  setPendingLogs(newLogs);
+                  const blob = new Blob([newLogs.join('\n')], { type: 'text/markdown' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url; a.download = `${dateStr}.md`; a.click();
+                  URL.revokeObjectURL(url);
+                  addToast("📝 Log downloaded — place it in your Vault folder!", "system");
+                  return true;
+              }
+
+              // Chromium: direct file system write
+              const handle = await idb.get('vault_handle');
+              if (!handle) {
+                  addToast("❌ Please link your Vault folder first in the Hub!", "error");
+                  return false;
+              }
+              
+              if (await handle.queryPermission({mode: 'readwrite'}) !== 'granted') {
+                  if (await handle.requestPermission({mode: 'readwrite'}) !== 'granted') {
+                      addToast("❌ Permission to write to folder denied.", "error");
+                      return false;
+                  }
+              }
+              
+              const dateStr = new Date().toISOString().split('T')[0];
+              const fileHandle = await handle.getFileHandle(`${dateStr}.md`, {create: true});
+              const file = await fileHandle.getFile();
+              const existingContent = await file.text();
+              
+              const writable = await fileHandle.createWritable();
+              await writable.write(existingContent + (existingContent ? '\n' : '') + content);
+              await writable.close();
+              
+              addToast("📝 Confession Synced Directly to Local File!", "system");
+              return true;
+          } catch (e) {
+              console.error(e);
+              addToast("❌ Failed to sync to local folder.", "error");
+              return false;
+          }
+      };
+
+      const [dailyLogModal, setDailyLogModal] = React.useState(null);
+
+      const openDailyNote = async () => {
+          if (!isObsidianOwner) {
+              addToast(`Open logs on owner device: ${obsidianOwnerLabel || obsidianOwnerDeviceId}.`, "error");
+              return;
+          }
+          try {
+              if (!hasNativeFS) {
+                  if (pendingLogs.length === 0) { addToast("No entries logged yet today.", "system"); return; }
+                  setDailyLogModal(pendingLogs.join('\n'));
+                  return;
+              }
+              const handle = await idb.get('vault_handle');
+              if (!handle) { addToast("❌ No vault folder linked.", "error"); return; }
+              if (await handle.queryPermission({mode: 'readwrite'}) !== 'granted') {
+                  if (await handle.requestPermission({mode: 'readwrite'}) !== 'granted') { addToast("❌ Permission denied.", "error"); return; }
+              }
+              const dateStr = new Date().toISOString().split('T')[0];
+              try {
+                  const fileHandle = await handle.getFileHandle(`${dateStr}.md`, {create: false});
+                  const file = await fileHandle.getFile();
+                  const content = await file.text();
+                  setDailyLogModal(content || "(No entries yet for today.)");
+              } catch(e) {
+                  setDailyLogModal("(No daily log file found for today.)");
+              }
+          } catch(e) {
+              console.error(e);
+              addToast("❌ Failed to open daily log.", "error");
+          }
+      };
+
+      const currentLevel = calcLevel(xp);
+      const currentRank =[...ranks].reverse().find(r => xp >= r.xp) || ranks[0];
+      const currentRankIdx = rankOrder.indexOf(currentRank.tier);
+
+      // --- GACHA LOGIC ---
+      const canSpin = !lastSpin || (new Date().setHours(0,0,0,0) > new Date(lastSpin).setHours(0,0,0,0));
+      
+      const gachaPool =[
+        { label: "JACKPOT", sub: "+500 XP, +100 Gold", color: "gold", act: () => { setXP(x=>x+500); setGold(g=>g+100); addToast("🎰 JACKPOT! +500 XP, +100 Gold", "loot"); } },
+        { label: "EPIC LOOT", sub: "+200 XP", color: "purple", act: () => { setXP(x=>x+200); addToast("Loot Acquired: +200 XP", "loot"); } },
+        { label: "BOUNTY", sub: "+50 Gold", color: "blue", act: () => { setGold(g=>g+50); addToast("Loot Acquired: +50 Gold", "loot"); } },
+        { label: "AWAKENING", sub: "+2 Focus", color: "green", act: () => { setStats(s=>({...s, Focus: s.Focus+2})); addToast("Stat Improved: +2 Focus", "system"); } },
+        { label: "GLITCH", sub: "+5 DC", color: "red", act: () => { setDarkCrystals(d=>d+5); addToast("System Glitch! Dark Energy Absorbed (+5 DC)", "penalty"); } },
+        { label: "BLESSING", sub: "+100 XP, +20 Gold", color: "purple", act: () => { setXP(x=>x+100); setGold(g=>g+20); addToast("System Blessing Received!", "loot"); } }
+      ];
+
+      const handleGachaSpin = () => {
+        if(!canSpin || isSpinning) return;
+        setIsSpinning(true);
+        
+        const newItems = Array.from({length: 50}, () => gachaPool[Math.floor(Math.random() * gachaPool.length)]);
+        const winningIndex = 44;
+        const winner = gachaPool[Math.floor(Math.random() * gachaPool.length)];
+        newItems[winningIndex] = winner;
+        
+        setGachaItems(newItems);
+        setGachaOffset(0);
+
+        setTimeout(() => {
+          const itemWidth = 150; 
+          const fuzz = Math.floor(Math.random() * 80) - 40;
+          setGachaOffset(`calc(50% - 75px - ${winningIndex * itemWidth}px + ${fuzz}px)`);
+        }, 50);
+
+        setTimeout(() => {
+          setIsSpinning(false);
+          setLastSpin(Date.now());
+          winner.act();
+          setTimeout(() => toggleModal('spin', false), 2500);
+        }, 5500);
+      };
+
+      // --- Renders ---
+      if (!isUnlocked) {
+        return (
+          <div className="min-h-screen flex items-center justify-center bg-[#0f1115]">
+            <div className="sl-glass p-8 text-center max-w-sm w-full shadow-[0_0_50px_#a259ff33]">
+              <h1 className="text-3xl font-black glow-purple mb-6 uppercase tracking-widest">System Locked</h1>
+              <p className="text-gray-400 mb-6 text-sm">Enter Hunter Identification Sequence.</p>
+              <input type="password" placeholder="Password" className="sl-modal-input text-center font-bold tracking-widest" value={loginInput} onChange={e=>setLoginInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter') { if(loginInput === appPassword || !appPassword) setIsUnlocked(true); else addToast("❌ Access Denied", "error"); }}} />
+              <button className="sl-btn w-full py-3 mt-2" onClick={() => { if(loginInput === appPassword || !appPassword) { setIsUnlocked(true); addToast("Welcome back, Player.", "system"); } else addToast("❌ Access Denied", "error"); }}>Awaken</button>
+            </div>
+            <div className="toast-container">
+              {toasts.map(t => <div key={t.id} className={`toast-item ${t.type}`}>{t.msg}</div>)}
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="sl-panel p-4 md:p-6 pb-20">
+          
+          <div className="toast-container">
+            {toasts.map(t => (
+              <div key={t.id} className={`toast-item ${t.type}`}>
+                {t.type === 'loot' && '✨ '}
+                {t.type === 'penalty' && '⚠️ '}
+                {t.type === 'error' && '❌ '}
+                {t.type === 'system' && '📜 '}
+                {t.type === 'combat' && '⚔️ '}
+                {t.msg}
+              </div>
+            ))}
+          </div>
+
+          <div className="w-full max-w-6xl mx-auto flex justify-between items-center mb-6">
+            <div className="text-2xl font-black text-white tracking-widest text-shadow-sm shadow-purple-500">S L P</div>
+            <div className="flex gap-4">
+               <button className={`sl-btn px-4 py-1.5 text-sm uppercase ${!canSpin ? 'opacity-40 grayscale' : 'animate-pulse shadow-[0_0_15px_#a259ff]'}`} onClick={() => { setGachaItems(Array(5).fill({label:"?", color:"blue"})); setGachaOffset(0); toggleModal('spin', true); }} disabled={!canSpin}>
+                  🎡 Gacha {canSpin ? '(Ready)' : '(Cooldown)'}
+               </button>
+               <div className="bg-[#1a1c23] px-4 py-1.5 rounded-full border border-[#ecc94b55] flex items-center shadow-lg"><span className="font-bold glow-gold text-sm">🔥 {streak} Days</span></div>
+            </div>
+          </div>
+
+          <div className="w-full flex flex-col lg:flex-row gap-6 max-w-6xl mx-auto">
+            {/* Sidebar */}
+            <div className="w-full lg:w-1/4 sl-glass p-6 flex flex-col items-center self-start relative">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-purple-500 flex items-center justify-center mb-4 shadow-[0_0_20px_#a259ff66]">
+                <span className="text-4xl sl-status-label font-black drop-shadow-md">{currentRank.tier}</span>
+              </div>
+              <div className="text-center mb-4">
+                <div className="text-xl glow-gold font-bold uppercase tracking-wider">{currentRank.name}</div>
+                <div className="text-gray-400 text-sm font-bold">Level {currentLevel}</div>
+              </div>
+              
+              <div className="w-full mb-6">
+                <div className="xp-bar-bg">
+                  <div className="xp-bar-fill" style={{ width: `${Math.min(100, ((xp - currentRank.xp) / ((ranks[currentRankIdx+1]?.xp || xp+1) - currentRank.xp)) * 100)}%` }}></div>
+                  <div className="xp-bar-label">{xp} XP</div>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3 w-full mb-6">
+                {Object.keys(stats).map(stat => (
+                  <div key={stat} className="bg-[#1a1c23] p-2 rounded border border-gray-700 flex justify-between items-center shadow-inner">
+                    <span className="text-purple-400 text-xs font-bold uppercase">{stat}</span><span className="text-white text-sm font-bold">{stats[stat]}</span>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="flex w-full gap-2">
+                <div className="flex-1 bg-gradient-to-br from-yellow-900/30 to-yellow-600/10 border border-yellow-600/30 py-2 rounded text-center shadow-[0_0_10px_#ecc94b22]">
+                  <div className="text-[10px] text-yellow-600 uppercase font-black">Gold</div>
+                  <div className="text-lg glow-gold font-black">{gold}</div>
+                </div>
+                <div className="flex-1 bg-gradient-to-br from-red-900/30 to-red-600/10 border border-red-600/30 py-2 rounded text-center shadow-[0_0_10px_#e53e3e22]">
+                  <div className="text-[10px] text-red-600 uppercase font-black">Dark Crystals</div>
+                  <div className="text-lg glow-red font-black">{darkCrystals}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Dashboard */}
+            <div className="flex-1 min-w-0 flex flex-col gap-4">
+              
+              <div className="flex gap-2 bg-[#1a1c23] p-1.5 rounded-lg border border-purple-500/30 overflow-x-auto shadow-lg">
+                {["System", "Combat", "Journey", "Hub"].map(cat => (
+                  <button key={cat} className={`sl-category-btn whitespace-nowrap ${activeCategory === cat ? "sl-category-btn-active" : ""}`} onClick={() => setActiveCategory(cat)}>
+                    {cat === "System" ? "📜 System" : cat === "Combat" ? "⚔️ Combat" : cat === "Journey" ? "🗺️ Journey" : "⛺ Hub"}
+                  </button>
+                ))}
+              </div>
+              
+              <div className="sl-glass p-5 md:p-8 flex-1 min-h-[500px]">
+
+                {/* 1. SYSTEM */}
+                {activeCategory === "System" && (
+                  <div className="fade-in">
+                    <div className="flex gap-6 mb-6 border-b border-gray-700 pb-2 overflow-x-auto">
+                      {["Quests", "Evaluation", "Efficiency", "Negative Quests", "Study Log"].map(tab => (
+                        <button key={tab} className={`sl-tab whitespace-nowrap ${systemTab === tab ? "sl-tab-active" : ""}`} onClick={() => setSystemTab(tab)}>{tab}</button>
+                      ))}
+                    </div>
+
+                    {systemTab === "Quests" && (
+                      <div>
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className="font-bold text-lg glow-purple uppercase tracking-widest">Daily Directives</h3>
+                          <button className="sl-btn px-4 py-1.5 text-xs" onClick={() => toggleModal('quest', true)}>+ ADD QUEST</button>
+                        </div>
+                        <div className="space-y-3">
+                          {quests.map((q, i) => (
+                            <div key={q.id} className={`flex justify-between items-center rounded-lg p-4 border ${q.done ? "opacity-40 bg-[#1a1c23] border-gray-700" : (q.isPenalty ? "bg-red-900/10 border-red-500 pulse-red" : "bg-[#1a1c23] border-purple-500/50 hover:border-purple-400 transition-colors shadow-lg")}`}>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                    <div className={`font-bold text-lg ${q.isPenalty ? "text-red-400 drop-shadow-[0_0_5px_#e53e3e]" : "text-white"}`}>{q.isPenalty ? "⚠️ MANDATORY PENALTY: " : ""}{q.name}</div>
+                                    {q.repeatable && <span className="text-[10px] bg-purple-900/50 text-purple-300 px-2 py-0.5 rounded border border-purple-500/30 uppercase">Repeatable</span>}
+                                </div>
+                                <div className="text-xs text-gray-400 mt-1">{q.isPenalty ? `Requires immediate resolution.` : `Reward: +${q.statInc} ${q.stat} • ${q.xp} XP • ${q.gold} Gold`}</div>
+                              </div>
+                              <div className="flex gap-3">
+                                {!q.done && <button className={`sl-btn px-4 py-1.5 text-sm ${q.isPenalty ? 'bg-gradient-to-r from-red-600 to-red-800 shadow-[0_0_10px_#e53e3e55]' : ''}`} onClick={() => completeQuest(i)}>{q.isPenalty ? 'Endure' : (q.repeatable ? 'Complete' : 'Done')}</button>}
+                                <button className="text-gray-600 hover:text-red-500 transition-colors" onClick={() => {
+                                   if(q.isPenalty && !q.done) { addToast("Cannot delete a Mandatory Penalty. You must endure it.", "error"); return; }
+                                   setQuests(qs => qs.filter((_, idx) => idx !== i));
+                                }}>🗑️</button>
+                              </div>
+                            </div>
+                          ))}
+                          {quests.length === 0 && <div className="text-center text-gray-500 py-8 border border-dashed border-gray-700 rounded-lg">No active quests. The System waits.</div>}
+                        </div>
+                      </div>
+                    )}
+
+                    {systemTab === "Negative Quests" && (
+                      <div className="fade-in">
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className="font-bold text-lg text-red-500 uppercase tracking-widest drop-shadow-[0_0_5px_#e53e3e]">Dark Directives</h3>
+                          <button className="sl-btn px-4 py-1.5 text-xs bg-gradient-to-r from-red-700 to-red-900 shadow-[0_0_10px_#e53e3e55]" onClick={() => toggleModal('darkQuest', true)}>+ ADD DARK QUEST</button>
+                        </div>
+                        <p className="text-sm text-gray-400 mb-6">These represent bad habits. Indulging in them will reduce your stats and XP, but will grant Dark Crystals representing systemic corruption.</p>
+                        <div className="space-y-3">
+                          {negativeQuests.map((q, i) => (
+                            <div key={q.id} className="flex justify-between items-center rounded-lg p-4 border bg-red-900/10 border-red-500/50 shadow-[0_0_15px_#e53e3e22]">
+                              <div>
+                                <div className="font-bold text-lg text-red-400">{q.name}</div>
+                                <div className="text-xs text-gray-400 mt-1">Consequence: -{q.statDec} {q.stat} • -{q.xpDec} XP • <span className="text-red-500 font-bold">+{q.dcInc} DC</span></div>
+                              </div>
+                              <div className="flex gap-3">
+                                <button className="bg-red-800 text-white px-4 py-1.5 rounded font-bold uppercase text-sm hover:bg-red-700 shadow-md" onClick={() => indulgeNegativeQuest(i)}>Indulge</button>
+                                <button className="text-gray-600 hover:text-red-500 transition-colors" onClick={() => setNegativeQuests(qs => qs.filter((_, idx) => idx !== i))}>🗑️</button>
+                              </div>
+                            </div>
+                          ))}
+                          {negativeQuests.length === 0 && <div className="text-center text-gray-500 py-8 border border-dashed border-red-900 rounded-lg">No dark directives set. Keep your path pure.</div>}
+                        </div>
+                      </div>
+                    )}
+
+                    {systemTab === "Evaluation" && (
+                      <div className="max-w-md mx-auto fade-in">
+                         <div className="text-center mb-6">
+                           <h3 className="text-2xl font-black text-red-500 mb-2 uppercase drop-shadow-[0_0_10px_#e53e3e]">Distraction Confession</h3>
+                           <p className="text-sm text-gray-400">Confess sins against productivity. Generates a Mandatory Penalty Quest. Auto-syncs if Vault is linked.</p>
+                         </div>
+                         <div className="bg-[#1a1c23] p-6 rounded-xl border border-red-500/50 shadow-[0_0_25px_rgba(229,62,62,0.15)] flex flex-col gap-4">
+                            <div><label className="sl-modal-label text-red-400">Distraction Source</label><input type="text" id="dName" className="sl-modal-input border-red-900/50 focus:border-red-500" placeholder="e.g. YouTube Doomscrolling" /></div>
+                            <div className="flex gap-4">
+                                <div className="flex-1"><label className="sl-modal-label text-red-400">Hours Wasted</label><input type="number" step="0.5" id="dTime" className="sl-modal-input border-red-900/50 focus:border-red-500" placeholder="1.5" /></div>
+                                <div className="flex-1"><label className="sl-modal-label text-red-400">DC Penalty</label><input type="number" id="dDC" className="sl-modal-input border-red-900/50 focus:border-red-500" placeholder="10" /></div>
+                            </div>
+                            <div><label className="sl-modal-label text-red-400">Self-Imposed Consequence</label><input type="text" id="dCons" className="sl-modal-input border-red-900/50 focus:border-red-500" placeholder="e.g. 50 pushups immediately" /></div>
+                            
+                            <button className="bg-gradient-to-r from-red-600 to-red-900 text-white font-bold py-3 rounded uppercase tracking-wider mt-2 hover:filter hover:brightness-110 shadow-[0_0_15px_#e53e3e55]" onClick={async () => {
+                              const dn=document.getElementById('dName').value, dt=parseFloat(document.getElementById('dTime').value), dc=document.getElementById('dCons').value, dcManual=parseInt(document.getElementById('dDC').value);
+                              if(!dn || isNaN(dt) || !dc) { addToast("System Warning: Fill required confession fields.", "error"); return; }
+                              
+                              const dcGained = isNaN(dcManual) ? Math.ceil(dt*3) : dcManual;
+                              const nq = { id: Date.now(), name: `${dc} (For: ${dn})`, stat: "Consistency", statInc: 1, xp: 0, gold: 0, done: false, isPenalty: true, repeatable: false };
+                              setQuests(qs =>[nq, ...qs]); 
+                              setDarkCrystals(d => d + dcGained);
+                              
+                              const logEntry = `-[Distraction Confession] Wasted ${dt}h on ${dn}. Penalty: ${dc}. +${dcGained} Dark Crystals.`;
+                              
+                              if (vaultLinkedName) {
+                                  await writeToDailyNote(logEntry);
+                              } else {
+                                  addToast(`Confession accepted. +${dcGained} DC. (Link Vault to sync logs)`, 'penalty');
+                              }
+                              
+                              document.getElementById('dName').value=''; document.getElementById('dTime').value=''; document.getElementById('dCons').value=''; document.getElementById('dDC').value='';
+                            }}>Submit Confession</button>
+                         </div>
+                      </div>
+                    )}
+
+                    {systemTab === "Efficiency" && (
+                      <div className="max-w-md mx-auto fade-in text-center">
+                        <h3 className="text-2xl font-black glow-purple mb-2 uppercase tracking-widest">Temporal Assessment</h3>
+                        <p className="text-sm text-gray-400 mb-6">Evaluate your daily Hunter efficiency. Low efficiency angers the System.</p>
+                        
+                        <div className="bg-[#1a1c23] p-6 rounded-xl border border-purple-500/50 shadow-[0_0_20px_#a259ff22] flex flex-col gap-4 text-left">
+                           <div><label className="sl-modal-label">Total Work Hours Available</label><input type="number" id="effTotal" className="sl-modal-input" placeholder="8" /></div>
+                           <div><label className="sl-modal-label">Actual Focused Hours</label><input type="number" id="effFocus" className="sl-modal-input" placeholder="6" /></div>
+                           <button className="sl-btn py-3 mt-2 uppercase tracking-widest text-sm" onClick={()=>{
+                             const t = parseFloat(document.getElementById('effTotal').value);
+                             const f = parseFloat(document.getElementById('effFocus').value);
+                             if(!t || f===undefined || t<=0) { addToast("Invalid input detected.", "error"); return; }
+                             const pct = Math.round((f/t)*100);
+                             if(pct >= 95) {
+                               setXP(x=>x+300); setGold(g=>g+100); setStats(s=>({...s, Focus: s.Focus+3})); addToast(`🌟 SOVEREIGN Efficiency (${pct}%)! +300 XP, +100 Gold, +3 Focus`, "loot");
+                               if(vaultLinkedName) writeToDailyNote(`- [Efficiency] 🌟 SOVEREIGN — ${pct}% (${f}h / ${t}h) | +300 XP, +100 Gold, +3 Focus`);
+                             } else if(pct >= 80) {
+                               setXP(x=>x+150); setGold(g=>g+50); setStats(s=>({...s, Focus: s.Focus+1})); addToast(`⚡ S-Rank Efficiency (${pct}%)! +150 XP, +50 Gold, +1 Focus`, "loot");
+                               if(vaultLinkedName) writeToDailyNote(`- [Efficiency] ⚡ S-Rank — ${pct}% (${f}h / ${t}h) | +150 XP, +50 Gold, +1 Focus`);
+                             } else if(pct >= 70) {
+                               setXP(x=>x+90); setGold(g=>g+25); addToast(`✅ A-Rank Efficiency (${pct}%)! +90 XP, +25 Gold`, "system");
+                               if(vaultLinkedName) writeToDailyNote(`- [Efficiency] ✅ A-Rank — ${pct}% (${f}h / ${t}h) | +90 XP, +25 Gold`);
+                             } else if(pct >= 60) {
+                               setXP(x=>x+40); addToast(`📋 B-Rank Efficiency (${pct}%)! +40 XP.`, "system");
+                               if(vaultLinkedName) writeToDailyNote(`- [Efficiency] 📋 B-Rank — ${pct}% (${f}h / ${t}h) | +40 XP`);
+                             } else if(pct >= 40) {
+                               const dc = Math.round(15 + (59 - pct) * 0.5);
+                               setDarkCrystals(d=>d+dc);
+                               setQuests(qs=>[{id:Date.now(), name:"Efficiency Repair (Study 1hr extra)", stat:"Focus", statInc:1, xp:0, gold:0, done:false, isPenalty:true, repeatable: false}, ...qs]);
+                               addToast(`⚠️ D-Rank Efficiency (${pct}%). Penalty! +${dc} DC`, "penalty");
+                               if(vaultLinkedName) writeToDailyNote(`- [Efficiency] ⚠️ D-Rank — ${pct}% (${f}h / ${t}h) | PENALTY +${dc} DC`);
+                             } else {
+                               const dc = Math.round(30 + (39 - pct) * 1.2);
+                               setDarkCrystals(d=>d+dc);
+                               setXP(x=>Math.max(0, x-30));
+                               setQuests(qs=>[{id:Date.now(), name:"Emergency Efficiency Restoration (2hrs deep work)", stat:"Focus", statInc:2, xp:0, gold:0, done:false, isPenalty:true, repeatable: false}, ...qs]);
+                               addToast(`💀 F-Rank Efficiency (${pct}%). System punishes failure! +${dc} DC, -30 XP`, "penalty");
+                               if(vaultLinkedName) writeToDailyNote(`- [Efficiency] 💀 F-Rank — ${pct}% (${f}h / ${t}h) | HEAVY PENALTY +${dc} DC, -30 XP`);
+                             }
+                           }}>Calculate & Submit</button>
+                        </div>
+                      </div>
+                    )}
+
+                    {systemTab === "Study Log" && (() => {
+                      const SR_INTERVALS = [3, 5, 7, 14, 30];
+                      const SR_LABELS = ["1st Review", "2nd Review", "3rd Review", "4th Review", "Monthly"];
+                      const today = new Date(); today.setHours(0,0,0,0);
+
+                      const addDays = (dateStr, n) => {
+                        const d = new Date(dateStr); d.setHours(0,0,0,0); d.setDate(d.getDate() + n); return d.toISOString().split('T')[0];
+                      };
+
+                      const dueToday = studyLog.filter(e => {
+                        if(e.currentStage >= SR_INTERVALS.length) return false;
+                        const due = new Date(e.nextReviewDate); due.setHours(0,0,0,0);
+                        return due <= today;
+                      });
+
+                      const markReviewed = (id) => {
+                        setStudyLog(log => log.map(e => {
+                          if(e.id !== id) return e;
+                          const nextStage = e.currentStage + 1;
+                          const todayStr = new Date().toISOString().split('T')[0];
+                          const nextReviewDate = nextStage < SR_INTERVALS.length ? addDays(todayStr, SR_INTERVALS[nextStage]) : null;
+                          const entry = { ...e, currentStage: nextStage, nextReviewDate, reviewHistory: [...(e.reviewHistory||[]), todayStr] };
+                          if(vaultLinkedName) writeToDailyNote(`- [Study Review] ✅ ${e.subject} — ${e.chapter} | Stage ${nextStage}/${SR_INTERVALS.length} (${nextStage < SR_INTERVALS.length ? SR_LABELS[nextStage]+' in '+SR_INTERVALS[nextStage]+'d' : 'MASTERED 🏆'})`);
+                          setXP(x => x + 20); setStats(s=>({...s, INT: s.INT+1}));
+                          addToast(`📚 Reviewed: ${e.chapter}! +20 XP, +1 INT`, "loot");
+                          return entry;
+                        }));
+                      };
+
+                      return (
+                        <div className="fade-in flex flex-col gap-6">
+                          {/* Due for Review */}
+                          {dueToday.length > 0 && (
+                            <div className="bg-yellow-900/20 border border-yellow-500/60 rounded-xl p-5 shadow-[0_0_20px_#ecc94b22]">
+                              <h3 className="text-yellow-400 font-black text-lg uppercase tracking-widest mb-4">⚠️ Due for Review ({dueToday.length})</h3>
+                              <div className="flex flex-col gap-3">
+                                {dueToday.map(e => (
+                                  <div key={e.id} className="flex items-center justify-between bg-[#1a1c23] rounded-lg p-4 border border-yellow-500/40">
+                                    <div>
+                                      <div className="font-bold text-white">{e.chapter}</div>
+                                      <div className="text-xs text-gray-400 mt-0.5">{e.subject} · <span className="text-yellow-400">{SR_LABELS[e.currentStage]}</span> · Studied {e.dateStudied}</div>
+                                    </div>
+                                    <button className="bg-gradient-to-r from-yellow-600 to-yellow-400 text-black font-black px-4 py-2 rounded text-xs uppercase hover:brightness-110 shadow-[0_0_10px_#ecc94b55]" onClick={()=>markReviewed(e.id)}>✓ Done</button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Log New Chapter */}
+                          <div className="bg-[#1a1c23] rounded-xl p-5 border border-purple-500/50 shadow-[0_0_20px_#a259ff11]">
+                            <h3 className="font-black text-lg glow-purple uppercase tracking-widest mb-4">📖 Log New Chapter</h3>
+                            <div className="flex flex-col gap-3">
+                              <div className="flex gap-3">
+                                <div className="flex-1"><label className="sl-modal-label">Subject</label><input id="studySubject" className="sl-modal-input" placeholder="e.g. Biochemistry" /></div>
+                                <div className="flex-1"><label className="sl-modal-label">Chapter / Topic</label><input id="studyChapter" className="sl-modal-input" placeholder="e.g. Ch.4 Glycolysis" /></div>
+                              </div>
+                              <button className="sl-btn py-3 uppercase tracking-widest text-sm" onClick={async ()=>{
+                                const subj = document.getElementById('studySubject').value.trim();
+                                const chap = document.getElementById('studyChapter').value.trim();
+                                if(!subj || !chap) { addToast("Fill in subject and chapter.", "error"); return; }
+                                const todayStr = new Date().toISOString().split('T')[0];
+                                const entry = { id: Date.now(), subject: subj, chapter: chap, dateStudied: todayStr, currentStage: 0, nextReviewDate: addDays(todayStr, SR_INTERVALS[0]), reviewHistory: [] };
+                                setStudyLog(l => [entry, ...l]);
+                                setXP(x=>x+30); setStats(s=>({...s, INT: s.INT+2}));
+                                addToast(`📚 Logged: ${chap}! First review in 3 days. +30 XP, +2 INT`, "loot");
+                                if(vaultLinkedName) await writeToDailyNote(`- [Study Log] 📖 ${subj} — ${chap} | Next review: ${addDays(todayStr, SR_INTERVALS[0])}`);
+                                document.getElementById('studySubject').value=''; document.getElementById('studyChapter').value='';
+                              }}>Log Chapter</button>
+                            </div>
+                          </div>
+
+                          {/* All Chapters */}
+                          <div>
+                            <h3 className="font-black text-lg glow-purple uppercase tracking-widest mb-4">All Chapters ({studyLog.length})</h3>
+                            {studyLog.length === 0 && <div className="text-center text-gray-500 py-8 border border-dashed border-gray-700 rounded-lg">No chapters logged yet. Start studying, Hunter.</div>}
+                            <div className="flex flex-col gap-3">
+                              {studyLog.map(e => {
+                                const mastered = e.currentStage >= SR_INTERVALS.length;
+                                const dueDate = e.nextReviewDate ? new Date(e.nextReviewDate) : null;
+                                if(dueDate) dueDate.setHours(0,0,0,0);
+                                const overdue = !mastered && dueDate && dueDate < today;
+                                const dueNow = !mastered && dueDate && dueDate.getTime() === today.getTime();
+                                return (
+                                  <div key={e.id} className={`bg-[#1a1c23] rounded-lg p-4 border flex items-center justify-between gap-4 ${mastered ? 'border-green-500/40' : overdue||dueNow ? 'border-yellow-500/50' : 'border-gray-700'}`}>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="font-bold text-white truncate">{e.chapter}</span>
+                                        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded">{e.subject}</span>
+                                        {mastered && <span className="text-xs bg-green-900/50 text-green-400 px-2 py-0.5 rounded border border-green-500/30">🏆 MASTERED</span>}
+                                      </div>
+                                      <div className="mt-2 flex gap-1 flex-wrap">
+                                        {SR_INTERVALS.map((_, i) => (
+                                          <div key={i} className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${i < e.currentStage ? 'bg-green-900/40 text-green-400 border border-green-500/30' : i === e.currentStage && !mastered ? 'bg-yellow-900/40 text-yellow-400 border border-yellow-500/40' : 'bg-gray-800 text-gray-600 border border-gray-700'}`}>{SR_LABELS[i]}</div>
+                                        ))}
+                                      </div>
+                                      {!mastered && <div className="text-xs text-gray-500 mt-1">Next: {e.nextReviewDate} {overdue ? <span className="text-red-400 font-bold">(OVERDUE)</span> : dueNow ? <span className="text-yellow-400 font-bold">(TODAY)</span> : ''}</div>}
+                                    </div>
+                                    <div className="flex gap-2 items-center shrink-0">
+                                      {!mastered && (dueNow||overdue) && <button className="bg-gradient-to-r from-yellow-600 to-yellow-400 text-black font-black px-3 py-1.5 rounded text-xs uppercase hover:brightness-110" onClick={()=>markReviewed(e.id)}>✓ Review</button>}
+                                      <button className="text-gray-600 hover:text-red-500 transition-colors" onClick={()=>setStudyLog(l=>l.filter(x=>x.id!==e.id))}>🗑️</button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {activeCategory === "Combat" && (
+                  <div className="fade-in">
+                    <div className="flex gap-6 mb-6 border-b border-gray-700 pb-2 overflow-x-auto">
+                      {["Raids", "Bosses", "Rivals"].map(tab => (
+                        <button key={tab} className={`sl-tab ${combatTab === tab ? "sl-tab-active" : ""}`} onClick={() => setCombatTab(tab)}>{tab}</button>
+                      ))}
+                    </div>
+
+                    {combatTab === "Raids" && (
+                      <div>
+                        <div className="flex justify-end mb-4"><button className="sl-btn px-4 py-1.5 text-xs" onClick={()=>toggleModal('raid', true)}>+ CREATE RAID</button></div>
+                        <div className="space-y-4">
+                          {raids.map((r, i) => (
+                            <div key={r.id} className="bg-[#1a1c23] rounded-xl p-5 border border-blue-500/30 flex items-center justify-between shadow-[0_0_15px_#3b82f611] hover:border-blue-400 transition-colors">
+                              <div><div className="font-bold text-lg glow-blue uppercase">{r.name}</div><div className="text-sm text-gray-400 mt-1">Required: {r.xpReq} XP | Reward: <span className="text-yellow-400">{r.gold} Gold</span></div></div>
+                              <div className="flex gap-3 items-center">
+                                <button className={`sl-btn px-5 py-2 text-sm uppercase transition-all`} onClick={()=>{
+                                  if(r.completed) { addToast("Gate already cleared.", "system"); return; }
+                                  if(xp < r.xpReq) { addToast(`❌ Insufficient XP! Need ${r.xpReq}.`, "error"); return; }
+                                  
+                                  if(Math.random()>0.15){ setGold(g=>g+r.gold); setRaids(rs=>rs.map((rd,idx)=>idx===i?{...rd,completed:true}:rd)); addToast(`🏆 Dungeon Cleared! +${r.gold} Gold`, "loot"); } 
+                                  else { setDarkCrystals(d=>d+5); addToast("💀 Dungeon Raid Failed. System penalized you: +5 DC", "penalty"); }
+                                }}>{r.completed ? 'Cleared' : 'Enter Gate'}</button>
+                                <button className="text-gray-600 hover:text-red-500" onClick={()=>setRaids(rs=>rs.filter((_,idx)=>idx!==i))}>🗑️</button>
+                              </div>
+                            </div>
+                          ))}
+                          {raids.length===0 && <p className="text-center text-gray-500 mt-8 border border-dashed border-gray-700 rounded-lg p-6">No active Gates detected.</p>}
+                        </div>
+                      </div>
+                    )}
+
+                    {combatTab === "Bosses" && (
+                       <div>
+                        <div className="flex justify-end mb-4"><button className="sl-btn px-4 py-1.5 text-xs" onClick={()=>toggleModal('boss', true)}>+ SUMMON BOSS</button></div>
+                        <div className="space-y-4">
+                          {bosses.map((b, i) => (
+                             <div key={b.id} className="bg-[#1a1c23] rounded-xl p-5 border border-red-500/50 flex items-center justify-between relative overflow-hidden shadow-[0_0_20px_rgba(229,62,62,0.15)]">
+                               <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-bl-full pointer-events-none"></div>
+                               <div><div className="font-black text-xl text-red-400 drop-shadow-[0_0_8px_#e53e3e] uppercase">{b.name}</div><div className="text-sm text-gray-400 mt-1">Req: {b.xpReq} XP | <span className="text-red-500 font-bold">Lethal Penalty: {b.penalty} DC</span></div></div>
+                               <div className="flex gap-3 z-10">
+                                 <button className="bg-gradient-to-r from-red-600 to-red-800 text-white px-5 py-2 rounded font-bold uppercase shadow-[0_0_15px_#e53e3e66] hover:brightness-110 transition-all" onClick={()=>{
+                                   if(b.completed) { addToast("Boss is already dead.", "system"); return; }
+                                   if(xp < b.xpReq) { addToast(`❌ Insufficient XP! Need ${b.xpReq}.`, "error"); return; }
+                                   
+                                   if(Math.random()>0.3){ setGold(g=>g+b.gold); setBosses(bs=>bs.map((bx,idx)=>idx===i?{...bx,completed:true}:bx)); addToast(`👹 Boss Slain! Loot acquired! +${b.gold} Gold`, "loot"); } 
+                                   else { setDarkCrystals(d=>d+b.penalty); addToast(`🩸 Boss crushed your efforts. +${b.penalty} DC`, "penalty"); }
+                                 }}>{b.completed ? 'Slain' : 'Challenge'}</button>
+                                 <button className="text-gray-600 hover:text-red-500" onClick={()=>setBosses(bs=>bs.filter((_,idx)=>idx!==i))}>🗑️</button>
+                               </div>
+                             </div>
+                          ))}
+                        </div>
+                       </div>
+                    )}
+
+                    {combatTab === "Rivals" && (
+                      <div>
+                        <div className="flex justify-end mb-4"><button className="sl-btn px-4 py-1.5 text-xs" onClick={()=>toggleModal('rival', true)}>+ REGISTER RIVAL</button></div>
+                        <div className="grid sm:grid-cols-2 gap-5">
+                          {rivals.map(r => (
+                            <div key={r.id} className="bg-[#1a1c23] border border-purple-500/40 rounded-xl p-5 relative shadow-[0_0_15px_#a259ff11] hover:-translate-y-1 transition-transform group">
+                               <button className="absolute top-4 left-4 text-gray-600 hover:text-red-500 transition-colors z-10" onClick={(e) => { e.stopPropagation(); setRivals(rs => rs.filter(x => x.id !== r.id)); }}>🗑️</button>
+                               <div className="absolute top-4 right-4 text-3xl font-black text-gray-800 group-hover:text-purple-900/50 transition-colors">{r.rank}</div>
+                               <div className="font-black text-xl glow-purple mb-1 text-center uppercase">{r.name}</div>
+                               <div className="text-xs text-gray-400 mb-4 text-center uppercase tracking-wider">{r.type} Competitor</div>
+                               
+                               <div className="grid grid-cols-3 gap-2 mb-4 text-center border-t border-b border-gray-700 py-3">
+                                  <div><div className="text-[10px] text-gray-500 uppercase">Focus</div><div className="font-bold text-blue-400 text-lg drop-shadow-[0_0_5px_#3b82f6]">{r.focus || '??'}</div></div>
+                                  <div><div className="text-[10px] text-gray-500 uppercase">STR</div><div className="font-bold text-red-400 text-lg drop-shadow-[0_0_5px_#e53e3e]">{r.str || '??'}</div></div>
+                                  <div><div className="text-[10px] text-gray-500 uppercase">INT</div><div className="font-bold text-green-400 text-lg drop-shadow-[0_0_5px_#10b981]">{r.int || '??'}</div></div>
+                               </div>
+
+                               <button className="sl-btn w-full py-2 text-sm uppercase tracking-widest shadow-lg" onClick={()=>toggleModal('duel', r)}>Initiate Duel</button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 3. JOURNEY */}
+                {activeCategory === "Journey" && (
+                  <div className="fade-in flex flex-col gap-8">
+                    <div className="flex gap-6 border-b border-gray-700 pb-2 overflow-x-auto">
+                      {["Main Arc", "Side Missions"].map(tab => (
+                        <button key={tab} className={`sl-tab whitespace-nowrap ${journeyTab === tab ? "sl-tab-active" : ""}`} onClick={() => setJourneyTab(tab)}>{tab}</button>
+                      ))}
+                    </div>
+
+                    {journeyTab === "Main Arc" && (
+                      <div className="fade-in flex flex-col gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="bg-[#1a1c23] p-6 rounded-xl border-l-4 border-yellow-500 shadow-[0_0_20px_#ecc94b11]">
+                            <h3 className="text-xs text-yellow-500 font-bold uppercase tracking-widest mb-2">Life Mission</h3>
+                            {!lifeMission ? (
+                              <input type="text" className="bg-transparent border-b border-gray-600 text-white outline-none w-full py-1 text-lg font-bold" placeholder="Define your ultimate purpose..." onBlur={e => setLifeMission(e.target.value)} onKeyDown={e=>{if(e.key==='Enter') setLifeMission(e.target.value)}} />
+                            ) : (
+                              <div className="group cursor-pointer" onClick={()=>setLifeMission("")}>
+                                <p className="text-xl font-bold text-white leading-snug">{lifeMission}</p>
+                                <p className="text-xs text-gray-500 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">Click to edit</p>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="bg-[#1a1c23] p-6 rounded-xl border-l-4 border-purple-500 shadow-[0_0_20px_#a259ff11]">
+                            <h3 className="text-xs text-purple-400 font-bold uppercase tracking-widest mb-2">Current Arc (Short-Term)</h3>
+                            {!shortTermMission ? (
+                              <input type="text" className="bg-transparent border-b border-gray-600 text-white outline-none w-full py-1 text-lg font-bold" placeholder="Your immediate focus..." onBlur={e => setShortTermMission(e.target.value)} onKeyDown={e=>{if(e.key==='Enter') setShortTermMission(e.target.value)}} />
+                            ) : (
+                              <div className="group cursor-pointer" onClick={()=>setShortTermMission("")}>
+                                <p className="text-xl font-bold text-white leading-snug">{shortTermMission}</p>
+                                <p className="text-xs text-gray-500 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">Click to edit</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="bg-[#1a1c23] rounded-xl p-6 border border-gray-700 shadow-lg relative">
+                          <div className="flex justify-between items-center mb-8">
+                            <h3 className="text-xl font-black glow-gold uppercase tracking-widest">Hunter's Roadmap</h3>
+                            <button className="sl-btn px-4 py-1.5 text-xs" onClick={()=>{
+                              const title = prompt("Enter new milestone:");
+                              if(title) { setRoadmap(r=>[...r, { id: Date.now(), title, completed: false }]); addToast("Milestone added to Roadmap.", "system"); }
+                            }}>+ Add Milestone</button>
+                          </div>
+                          
+                          <div className="timeline-container">
+                            {roadmap.length === 0 && <p className="text-sm text-gray-500 italic">No milestones set. The path is unclear.</p>}
+                            {roadmap.map(ms => (
+                              <div key={ms.id} className={`relative flex justify-between items-center p-3 rounded-lg border ${ms.completed ? 'bg-gray-900 border-gray-800 opacity-60' : 'bg-[#23263a] border-purple-500/30'}`}>
+                                <div className={`timeline-dot ${ms.completed ? 'timeline-dot-done' : ''}`}></div>
+                                <span className={`text-lg font-bold ${ms.completed ? 'text-gray-500 line-through' : 'text-white'}`}>{ms.title}</span>
+                                <div className="flex gap-3">
+                                  <button className={`text-sm font-bold uppercase tracking-wider ${ms.completed ? 'text-yellow-500' : 'text-purple-400'}`} onClick={()=>{
+                                    setRoadmap(r=>r.map(m=>m.id===ms.id ? {...m, completed: !m.completed} : m));
+                                    if(!ms.completed) addToast("Milestone Achieved!", "loot");
+                                  }}>{ms.completed ? 'Revert' : 'Achieve'}</button>
+                                  <button className="text-gray-600 hover:text-red-500" onClick={()=>setRoadmap(r=>r.filter(m=>m.id!==ms.id))}>🗑️</button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {journeyTab === "Side Missions" && (
+                      <div className="fade-in">
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className="font-bold text-lg glow-blue uppercase tracking-widest">Side Missions</h3>
+                          <button className="sl-btn px-4 py-1.5 text-xs border border-blue-500/50" onClick={() => toggleModal('sideMission', true)}>+ ADD SIDE MISSION</button>
+                        </div>
+                        <div className="space-y-3">
+                          {sideMissions.map((sm, i) => (
+                            <div key={sm.id} className="flex justify-between items-center rounded-lg p-4 bg-[#1a1c23] border border-blue-500/30 hover:border-blue-400 transition-colors shadow-[0_0_15px_#3b82f611]">
+                              <div>
+                                <div className="font-bold text-lg text-white">{sm.name}</div>
+                                <div className="text-xs text-blue-300 mt-1">Reward: {sm.stat ? `+${sm.statInc} ${sm.stat} • ` : ''} +{sm.xp} XP</div>
+                              </div>
+                              <div className="flex gap-3">
+                                <button className="sl-btn bg-gradient-to-r from-blue-600 to-blue-800 px-4 py-1.5 text-sm" onClick={() => completeSideMission(i)}>Complete</button>
+                                <button className="text-gray-600 hover:text-red-500 transition-colors" onClick={() => setSideMissions(sms => sms.filter((_, idx) => idx !== i))}>🗑️</button>
+                              </div>
+                            </div>
+                          ))}
+                          {sideMissions.length === 0 && <div className="text-center text-gray-500 py-8 border border-dashed border-blue-900/50 rounded-lg">No active side missions.</div>}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 4. HUB */}
+                {activeCategory === "Hub" && (
+                  <div className="fade-in">
+                    <div className="flex gap-6 mb-6 border-b border-gray-700 pb-2 overflow-x-auto">
+                      <button className={`sl-tab ${hubTab === "Shop" ? "sl-tab-active" : ""}`} onClick={() => setHubTab("Shop")}>System Shop</button>
+                      <button className={`sl-tab ${hubTab === "Journal" ? "sl-tab-active" : ""}`} onClick={() => setHubTab("Journal")}>Grimoire & Sync</button>
+                    </div>
+
+                    {hubTab === "Shop" && (
+                       <div className="fade-in">
+                        <div className="flex justify-between items-center mb-8">
+                          <div className="flex gap-4">
+                            <button className={`px-6 py-2 rounded-full font-bold uppercase tracking-widest text-sm transition-all border ${shopTabType === "light" ? "bg-yellow-500/20 text-yellow-400 border-yellow-500 shadow-[0_0_15px_#ecc94b55]" : "bg-transparent text-gray-500 border-gray-700 hover:border-gray-500"}`} onClick={() => setShopTabType("light")}>☀️ Light Shop</button>
+                            <button className={`px-6 py-2 rounded-full font-bold uppercase tracking-widest text-sm transition-all border ${shopTabType === "dark" ? "bg-red-500/20 text-red-400 border-red-500 shadow-[0_0_15px_#e53e3e55]" : "bg-transparent text-gray-500 border-gray-700 hover:border-gray-500"}`} onClick={() => setShopTabType("dark")}>🌑 Dark Shop</button>
+                          </div>
+                          <button className="sl-btn px-4 py-2 text-xs" onClick={() => toggleModal('shopItem', true)}>+ CREATE ITEM</button>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                          {shopTabType === "light" && lightShop.map(item => (
+                            <div key={item.id} className="bg-[#1a1c23] border border-yellow-500/30 rounded-xl p-5 flex flex-col justify-between relative group hover:-translate-y-1 transition-transform">
+                              <button className="absolute top-4 right-4 text-gray-600 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100" onClick={() => setLightShop(s => s.filter(x => x.id !== item.id))}>🗑️</button>
+                              <div className="mb-4 pr-6"><div className="font-bold text-xl glow-gold">{item.name}</div><div className="text-gray-400 text-sm mt-1">{item.desc}</div></div>
+                              {gold < item.price && <div className="text-xs text-red-400 font-bold mb-2 bg-red-900/20 px-2 py-1 rounded border border-red-500/40">⚠️ Need {item.price - gold} more Gold</div>}
+                              <button disabled={gold < item.price} className={`bg-gradient-to-r from-yellow-600 to-yellow-400 text-black font-black py-2 rounded uppercase transition-all ${gold < item.price ? 'opacity-40 cursor-not-allowed grayscale' : 'shadow-[0_0_10px_#ecc94b55] hover:brightness-110'}`} onClick={()=>{ 
+                                if(gold < item.price) { addToast(`❌ Insufficient Gold! You have ${gold}G but need ${item.price}G.`, "error"); return; }
+                                setGold(g=>g-item.price); 
+                                setStats(s=>({...s,[item.stat]:s[item.stat]+item.inc})); 
+                                addToast(`Purchased ${item.name}! ${item.desc}`, "loot"); 
+                              }}>BUY FOR {item.price} GOLD</button>
+                            </div>
+                          ))}
+                          
+                          {shopTabType === "dark" && darkShop.map(item => (
+                            <div key={item.id} className="bg-red-900/10 border border-red-500/30 rounded-xl p-5 flex flex-col justify-between relative group hover:-translate-y-1 transition-transform">
+                              <button className="absolute top-4 right-4 text-gray-600 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100" onClick={() => setDarkShop(s => s.filter(x => x.id !== item.id))}>🗑️</button>
+                              <div className="mb-4 pr-6"><div className="font-bold text-xl text-red-500 drop-shadow-[0_0_5px_#e53e3e]">{item.name}</div><div className="text-gray-400 text-sm mt-1">{item.desc}</div></div>
+                              {darkCrystals < item.price && <div className="text-xs text-red-400 font-bold mb-2 bg-red-900/20 px-2 py-1 rounded border border-red-500/40">⚠️ Need {item.price - darkCrystals} more Dark Crystals</div>}
+                              <button disabled={darkCrystals < item.price} className={`bg-gradient-to-r from-red-800 to-red-600 text-white font-black py-2 rounded uppercase transition-all ${darkCrystals < item.price ? 'opacity-40 cursor-not-allowed grayscale' : 'shadow-[0_0_10px_#e53e3e55] hover:brightness-110'}`} onClick={()=>{ 
+                                if(darkCrystals < item.price) { addToast(`❌ Insufficient Dark Crystals! You have ${darkCrystals} DC but need ${item.price} DC.`, "error"); return; }
+                                setDarkCrystals(d=>d-item.price); 
+                                if(item.type==='xp') setXP(x=>x+item.inc); 
+                                else if(item.stat) setStats(s=>({...s,[item.stat]:s[item.stat]+item.inc}));
+                                
+                                if(item.type==='cleanse' && quests.some(q=>q.isPenalty)) {
+                                  let removed = false;
+                                  setQuests(qs => qs.filter(q => { if(q.isPenalty && !removed) { removed = true; return false; } return true; }));
+                                }
+                                addToast(`Sacrificed for ${item.name}! ${item.desc}`, "system"); 
+                              }}>SACRIFICE {item.price} DC</button>
+                            </div>
+                          ))}
+                        </div>
+                       </div>
+                    )}
+
+                    {hubTab === "Journal" && (
+                      <div className="grid md:grid-cols-2 gap-6 fade-in">
+                        <div className="bg-[#1a1c23] p-6 rounded-xl border border-purple-500/50 shadow-lg text-center relative overflow-hidden flex flex-col justify-between">
+                          <div className="absolute -top-4 -right-4 text-7xl opacity-5">📓</div>
+                          <div>
+                              <h2 className="text-xl font-black glow-purple mb-2 uppercase">Local Folder Sync</h2>
+                              <p className="text-gray-400 text-sm mb-1">Write logs directly to your Obsidian Vault.</p>
+                              <p className="text-[11px] text-gray-500 mb-2">This device: {deviceLabel} ({deviceId})</p>
+                              {obsidianOwnerDeviceId && (
+                                <p className={`text-[11px] mb-2 ${isObsidianOwner ? "text-green-300" : "text-yellow-300"}`}>
+                                  Obsidian owner: {obsidianOwnerLabel || "Unknown"} ({obsidianOwnerDeviceId}) {isObsidianOwner ? "| this device" : "| other device"}
+                                </p>
+                              )}
+                              {!hasNativeFS && <p className="text-xs text-yellow-400 bg-yellow-900/20 border border-yellow-500/30 rounded px-2 py-1 mb-4">🦊 Firefox detected — using download-based sync</p>}
+                              {!vaultLinkedName ? (
+                                <button className="sl-btn w-full py-3 font-bold uppercase tracking-widest shadow-[0_0_15px_#a259ff44] disabled:opacity-50 disabled:cursor-not-allowed" onClick={linkVaultFolder} disabled={!isObsidianOwner}>
+                                  {hasNativeFS ? 'Select Local Folder' : '⬇ Enable Download Sync'}
+                                </button>
+                              ) : (
+                                <div className="mb-4">
+                                  <p className="text-green-400 font-bold mb-2 bg-green-900/20 py-2 rounded border border-green-500/30">✅ {hasNativeFS ? `Linked: ${vaultLinkedName}` : vaultLinkedName}</p>
+                                  {!hasNativeFS && pendingLogs.length > 0 && (
+                                    <button className="sl-btn w-full py-2 text-xs mb-2 uppercase" onClick={()=>{
+                                      const dateStr = new Date().toISOString().split('T')[0];
+                                      const blob = new Blob([pendingLogs.join('\n')], {type:'text/markdown'});
+                                      const url = URL.createObjectURL(blob); const a = document.createElement('a');
+                                      a.href=url; a.download=`${dateStr}.md`; a.click(); URL.revokeObjectURL(url);
+                                      addToast("📥 Today's log downloaded!", "system");
+                                    }}>⬇ Download Today's Log ({pendingLogs.length} entries)</button>
+                                  )}
+                                  {!hasNativeFS && (
+                                    <div className="mt-2">
+                                      <label className="sl-modal-label text-xs text-left block mb-1">📂 Import existing daily note to append:</label>
+                                      <input ref={importNoteRef} type="file" accept=".md,.txt" className="hidden" onChange={async (e)=>{
+                                        const f = e.target.files[0]; if(!f) return;
+                                        const text = await f.text();
+                                        const lines = text.split('\n').filter(l=>l.trim());
+                                        setPendingLogs(lines);
+                                        addToast(`📂 Imported ${f.name} — ${lines.length} lines loaded.`, "system");
+                                        e.target.value='';
+                                      }} />
+                                      <button className="text-xs text-blue-400 hover:text-blue-300 border border-blue-500/30 px-3 py-1 rounded uppercase tracking-wider" onClick={()=>importNoteRef.current.click()}>Upload Existing Note</button>
+                                    </div>
+                                  )}
+                                  <button className="sl-btn w-full py-2 text-xs mt-3 uppercase tracking-widest shadow-[0_0_10px_#a259ff33] disabled:opacity-50 disabled:cursor-not-allowed" onClick={openDailyNote} disabled={!isObsidianOwner}>📖 Open Today's Log</button>
+                                  <button className="text-xs text-gray-500 hover:text-red-400 transition-colors uppercase tracking-widest mt-3 block disabled:opacity-50 disabled:cursor-not-allowed" onClick={async ()=>{ if(hasNativeFS) await unlinkVaultFolder(); else { if(!isObsidianOwner) { addToast("Only owner device can disable Obsidian sync.", "error"); return; } setVaultLinkedName(""); setPendingLogs([]); addToast("Vault sync disabled.", "system"); } }} disabled={!isObsidianOwner}>Unlink / Disable</button>
+                                </div>
+                              )}
+                          </div>
+                        </div>
+
+                        <div className="bg-[#1a1c23] p-6 rounded-xl border border-blue-500/50 shadow-lg text-center relative overflow-hidden">
+                          <div className="absolute -top-4 -right-4 text-7xl opacity-5">🔮</div>
+                          <h2 className="text-xl font-black text-blue-400 drop-shadow-[0_0_8px_#3b82f6] mb-2 uppercase">Data Crystal (Sync)</h2>
+                          <p className="text-gray-400 text-sm mb-4">Backup or transfer your save via an encrypted string.</p>
+                          <div className="mb-5 p-3 rounded border border-green-500/40 bg-green-900/20 text-left">
+                            <p className="text-xs text-green-300 uppercase tracking-widest font-bold mb-2">remoteStorage Sync (No Backend)</p>
+                            <p className="text-[11px] text-gray-300 mb-2">Works on GitHub Pages using your account (example: anony503@5apps.com).</p>
+                            <input
+                              className="sl-modal-input text-xs mb-2"
+                              placeholder="your_username@5apps.com"
+                              value={rsAddress}
+                              onChange={(e) => setRsAddress(e.target.value)}
+                            />
+                            <div className="grid grid-cols-2 gap-2 mb-2">
+                              <button className="bg-green-700 text-white py-2 rounded text-xs font-bold uppercase tracking-wider hover:bg-green-600 disabled:opacity-50" onClick={connectRemoteStorage} disabled={!rsReady}>Connect</button>
+                              <button className="bg-gray-700 text-white py-2 rounded text-xs font-bold uppercase tracking-wider hover:bg-gray-600 disabled:opacity-50" onClick={disconnectRemoteStorage} disabled={!rsReady}>Disconnect</button>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <button className="bg-emerald-700 text-white py-2 rounded text-xs font-bold uppercase tracking-wider hover:bg-emerald-600 disabled:opacity-50" onClick={()=>pullRemoteStorageState(true)} disabled={!rsConnected}>Pull RS</button>
+                              <button className="bg-teal-700 text-white py-2 rounded text-xs font-bold uppercase tracking-wider hover:bg-teal-600 disabled:opacity-50" onClick={()=>pushRemoteStorageState(loadState() || {}, true)} disabled={!rsConnected}>Push RS</button>
+                            </div>
+                            <p className="text-[11px] text-gray-400 mt-2">Status: {rsStatus}{rsConnected ? " | Connected" : ""}</p>
+                          </div>
+                          
+                          
+                          <div className="space-y-3">
+                            {!appPassword ? (
+                               <div className="mb-4 bg-red-900/20 p-3 rounded border border-red-500 text-sm text-red-300">Set a Password below to secure data. Currently using unencrypted crystal.</div>
+                            ) : null}
+                            <button className="bg-gradient-to-r from-blue-700 to-blue-500 text-white w-full py-2 rounded font-bold uppercase tracking-wider hover:brightness-110 shadow-[0_0_10px_#3b82f655]" onClick={() => { 
+                              const exp = btoa(JSON.stringify(loadState()));
+                              try {
+                                navigator.clipboard.writeText(exp).then(() => addToast("Data Crystal Copied to Clipboard!", "system")).catch(() => {
+                                  const el = document.createElement('textarea'); el.value = exp; el.style.position='fixed'; el.style.opacity='0';
+                                  document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
+                                  addToast("Data Crystal Copied to Clipboard!", "system");
+                                });
+                              } catch(e) {
+                                const el = document.createElement('textarea'); el.value = exp; el.style.position='fixed'; el.style.opacity='0';
+                                document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
+                                addToast("Data Crystal Copied to Clipboard!", "system");
+                              }
+                            }}>Extract Crystal (Copy)</button>
+                            
+                            <div className="pt-4 border-t border-gray-700">
+                              <input id="importInput" className="sl-modal-input text-center text-sm mb-2" placeholder="Paste Crystal String Here" />
+                              <button className="bg-gray-700 text-white w-full py-2 rounded font-bold uppercase tracking-wider hover:bg-gray-600" onClick={() => {
+                                try { 
+                                  const str = document.getElementById('importInput').value;
+                                  const d = JSON.parse(atob(str)); 
+                                  if(d && d.stats) { localStorage.setItem(LOCAL_STATE_KEY, JSON.stringify(d)); window.location.reload(); } 
+                                } catch(e) { addToast("❌ Invalid Data Crystal!", "error"); }
+                              }}>Absorb Crystal (Import)</button>
+                            </div>
+                            
+                            <div className="pt-4 border-t border-gray-700">
+                              <h4 className="text-xs text-gray-400 uppercase font-bold mb-2">Open in Obsidian</h4>
+                              <p className="text-xs text-gray-500 mb-3">Opens today's daily note directly in Obsidian. Requires your vault name.</p>
+                              <div className="flex gap-2">
+                                <input id="obsidianVault" className="sl-modal-input mb-0 py-1 text-sm flex-1" placeholder="Vault name (e.g. MyVault)" />
+                                <button className="bg-gradient-to-r from-purple-700 to-purple-500 text-white px-4 rounded font-bold text-xs uppercase hover:brightness-110 shadow-[0_0_10px_#a259ff55] whitespace-nowrap" onClick={()=>{
+                                  const vault = document.getElementById('obsidianVault').value.trim();
+                                  if(!vault) { addToast("❌ Enter your Obsidian vault name.", "error"); return; }
+                                  const dateStr = new Date().toISOString().split('T')[0];
+                                  window.open(`obsidian://open?vault=${encodeURIComponent(vault)}&file=${encodeURIComponent(dateStr)}`, '_blank');
+                                }}>Open 🔮</button>
+                              </div>
+                            </div>
+
+                            <div className="pt-4 mt-4 border-t border-gray-700 text-left">
+                               <label className="text-xs text-gray-400 uppercase font-bold">System Password (Lock App)</label>
+                               <div className="flex gap-2 mt-1">
+                                 <input type="password" id="sysPass" className="sl-modal-input mb-0 py-1" placeholder="New Password" />
+                                 <button className="bg-purple-600 px-3 rounded text-xs font-bold" onClick={()=>{ setAppPassword(document.getElementById('sysPass').value); addToast("System Security Updated!", "system"); document.getElementById('sysPass').value='';}}>Set</button>
+                               </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* GACHA PULL MODAL */}
+          {modals.spin && (
+             <ModalWrapper title="System Gacha Pull" onClose={() => { if(!isSpinning) toggleModal('spin', false); }} borderClass="border-yellow-500" shadowClass="shadow-[0_0_50px_#ecc94b55]">
+                <div className="text-center pb-2">
+                  <div className="gacha-window">
+                    <div className="gacha-target-line"></div>
+                    <div className="gacha-overlay"></div>
+                    <div className="gacha-track" style={{ transform: `translateX(${gachaOffset})` }}>
+                      {gachaItems.map((item, idx) => (
+                        <div key={idx} className={`gacha-item ${item.color || 'blue'}`}>
+                          <div className="text-lg uppercase drop-shadow-md">{item.label}</div>
+                          {item.sub && <div className="text-[10px] text-gray-300 mt-1">{item.sub}</div>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <button className="bg-gradient-to-r from-yellow-600 to-yellow-400 text-black font-black py-3 px-10 rounded shadow-[0_0_20px_#ecc94b] text-xl uppercase tracking-widest hover:scale-105 transition-transform disabled:opacity-50 disabled:scale-100" onClick={handleGachaSpin} disabled={isSpinning}>INITIATE PULL</button>
+                </div>
+             </ModalWrapper>
+          )}
+
+          {/* ADD MODALS */}
+          {modals.shopItem && (
+            <ModalWrapper title="Create Shop Item" onClose={() => toggleModal('shopItem', false)}>
+              <label className="sl-modal-label">Shop Destination</label>
+              <select id="siType" className="sl-modal-select"><option value="light">Light Shop (Gold)</option><option value="dark">Dark Shop (Dark Crystals)</option></select>
+              <label className="sl-modal-label">Item Name</label><input id="siName" className="sl-modal-input" placeholder="e.g. Protein Shake" />
+              <label className="sl-modal-label">Description / Effect</label><input id="siDesc" className="sl-modal-input" placeholder="e.g. Grants +2 STR" />
+              <label className="sl-modal-label">Price</label><input id="siPrice" type="number" defaultValue="20" className="sl-modal-input" />
+              <div className="flex gap-4">
+                <div className="flex-1"><label className="sl-modal-label">Reward Type</label><select id="siRewardType" className="sl-modal-select"><option value="xp">XP</option>{Object.keys(stats).map(s=><option key={s} value={s}>Stat: {s}</option>)}</select></div>
+                <div className="flex-1"><label className="sl-modal-label">Amount</label><input id="siInc" type="number" defaultValue="2" className="sl-modal-input" /></div>
+              </div>
+              <button className="sl-btn w-full py-3 mt-2 text-lg" onClick={()=>{
+                const type = document.getElementById('siType').value;
+                const rType = document.getElementById('siRewardType').value;
+                const newItem = { id: Date.now(), name: document.getElementById('siName').value, desc: document.getElementById('siDesc').value, price: parseInt(document.getElementById('siPrice').value), type: rType === 'xp' ? 'xp' : 'stat', stat: rType !== 'xp' ? rType : undefined, inc: parseInt(document.getElementById('siInc').value) };
+                if (!newItem.name) return;
+                if (type === 'light') setLightShop(s => [...s, newItem]); else setDarkShop(s => [...s, newItem]);
+                addToast("New item injected into System Shop.", "system"); toggleModal('shopItem', false);
+              }}>Register Item</button>
+            </ModalWrapper>
+          )}
+
+          {modals.quest && (
+            <ModalWrapper title="Add Daily Directive" onClose={() => toggleModal('quest', false)}>
+              <label className="sl-modal-label">Quest Name</label><input id="qName" className="sl-modal-input" placeholder="e.g. Read 20 Pages" />
+              <div className="flex gap-4">
+                <div className="flex-1"><label className="sl-modal-label">Stat</label><select id="qStat" className="sl-modal-select">{Object.keys(stats).map(s=><option key={s} value={s}>{s}</option>)}</select></div>
+                <div className="flex-1"><label className="sl-modal-label">Increase</label><input id="qInc" type="number" defaultValue="2" className="sl-modal-input" /></div>
+              </div>
+              <div className="flex gap-4">
+                <div className="flex-1"><label className="sl-modal-label">XP Reward</label><input id="qXP" type="number" defaultValue="20" className="sl-modal-input" /></div>
+                <div className="flex-1"><label className="sl-modal-label">Gold Reward</label><input id="qGold" type="number" defaultValue="10" className="sl-modal-input" /></div>
+              </div>
+              <div className="flex items-center gap-3 mb-4 p-2 bg-purple-900/10 border border-purple-500/20 rounded">
+                <input type="checkbox" id="qRepeat" className="w-5 h-5 accent-purple-600" />
+                <label htmlFor="qRepeat" className="sl-modal-label mb-0 cursor-pointer">Repeatable (Doesn't deactivate after click)</label>
+              </div>
+              <button className="sl-btn w-full py-3 mt-2 text-lg" onClick={()=>{
+                const n = document.getElementById('qName').value; if(!n) return;
+                setQuests(qs =>[...qs, { id: Date.now(), name: n, stat: document.getElementById('qStat').value, statInc: parseInt(document.getElementById('qInc').value), xp: parseInt(document.getElementById('qXP').value), gold: parseInt(document.getElementById('qGold').value), done: false, isPenalty: false, repeatable: document.getElementById('qRepeat').checked }]);
+                addToast("Directive Added.", "system"); toggleModal('quest', false);
+              }}>Create Directive</button>
+            </ModalWrapper>
+          )}
+
+          {modals.darkQuest && (
+            <ModalWrapper title="Add Dark Directive" onClose={() => toggleModal('darkQuest', false)} borderClass="border-red-500" shadowClass="shadow-[0_0_40px_#e53e3e44]">
+              <label className="sl-modal-label text-red-400">Dark Habit Name</label><input id="dqName" className="sl-modal-input border-red-500/50" placeholder="e.g. Skipped Workout" />
+              <div className="flex gap-4">
+                <div className="flex-1"><label className="sl-modal-label text-red-400">Stat to Drain</label><select id="dqStat" className="sl-modal-select border-red-500/50">{Object.keys(stats).map(s=><option key={s} value={s}>{s}</option>)}</select></div>
+                <div className="flex-1"><label className="sl-modal-label text-red-400">Stat Decrease</label><input id="dqDec" type="number" defaultValue="1" className="sl-modal-input border-red-500/50" /></div>
+              </div>
+              <div className="flex gap-4">
+                <div className="flex-1"><label className="sl-modal-label text-red-400">XP Loss</label><input id="dqXp" type="number" defaultValue="50" className="sl-modal-input border-red-500/50" /></div>
+                <div className="flex-1"><label className="sl-modal-label text-red-400">DC Reward</label><input id="dqDc" type="number" defaultValue="10" className="sl-modal-input border-red-500/50" /></div>
+              </div>
+              <button className="bg-gradient-to-r from-red-600 to-red-900 text-white font-bold w-full py-3 mt-2 text-lg rounded uppercase shadow-[0_0_15px_#e53e3e66]" onClick={()=>{
+                const n = document.getElementById('dqName').value; if(!n) return;
+                setNegativeQuests(qs =>[...qs, { id: Date.now(), name: n, stat: document.getElementById('dqStat').value, statDec: parseInt(document.getElementById('dqDec').value), xpDec: parseInt(document.getElementById('dqXp').value), dcInc: parseInt(document.getElementById('dqDc').value) }]);
+                addToast("Dark Directive Registered.", "penalty"); toggleModal('darkQuest', false);
+              }}>Register Dark Quest</button>
+            </ModalWrapper>
+          )}
+
+          {modals.sideMission && (
+            <ModalWrapper title="Add Side Mission" onClose={() => toggleModal('sideMission', false)} borderClass="border-blue-500" shadowClass="shadow-[0_0_40px_#3b82f644]">
+              <label className="sl-modal-label text-blue-400">Mission Title</label><input id="smName" className="sl-modal-input border-blue-500/50" placeholder="e.g. Read 1 Extra Chapter" />
+              <div className="flex gap-4">
+                <div className="flex-1"><label className="sl-modal-label text-blue-400">Stat Reward (Opt.)</label><select id="smStat" className="sl-modal-select border-blue-500/50"><option value="">None</option>{Object.keys(stats).map(s=><option key={s} value={s}>{s}</option>)}</select></div>
+                <div className="flex-1"><label className="sl-modal-label text-blue-400">Stat Increase</label><input id="smInc" type="number" defaultValue="1" className="sl-modal-input border-blue-500/50" /></div>
+              </div>
+              <label className="sl-modal-label text-blue-400">XP Reward</label><input id="smXp" type="number" defaultValue="40" className="sl-modal-input border-blue-500/50" />
+              <button className="bg-gradient-to-r from-blue-600 to-blue-800 text-white font-bold w-full py-3 mt-2 text-lg rounded uppercase shadow-[0_0_15px_#3b82f666]" onClick={()=>{
+                const n = document.getElementById('smName').value; if(!n) return;
+                setSideMissions(sms =>[...sms, { id: Date.now(), name: n, stat: document.getElementById('smStat').value || null, statInc: parseInt(document.getElementById('smInc').value), xp: parseInt(document.getElementById('smXp').value) }]);
+                addToast("Side Mission Logged.", "system"); toggleModal('sideMission', false);
+              }}>Add Mission</button>
+            </ModalWrapper>
+          )}
+
+          {modals.raid && (
+            <ModalWrapper title="Create Raid (Project)" onClose={() => toggleModal('raid', false)} borderClass="border-blue-500" shadowClass="shadow-[0_0_40px_#3b82f644]">
+              <label className="sl-modal-label text-blue-400">Raid / Project Name</label><input id="rName" className="sl-modal-input border-blue-500/50" placeholder="e.g. Finish React Course" />
+              <label className="sl-modal-label text-blue-400">Required XP to Enter</label><input id="rXP" type="number" defaultValue="150" className="sl-modal-input border-blue-500/50" />
+              <label className="sl-modal-label text-blue-400">Gold Reward</label><input id="rGold" type="number" defaultValue="50" className="sl-modal-input border-blue-500/50" />
+              <button className="bg-gradient-to-r from-blue-700 to-blue-500 text-white font-bold w-full py-3 mt-2 text-lg rounded uppercase shadow-[0_0_15px_#3b82f666]" onClick={()=>{
+                const n = document.getElementById('rName').value; if(!n) return;
+                setRaids(rs =>[...rs, { id: Date.now(), name: n, xpReq: parseInt(document.getElementById('rXP').value), gold: parseInt(document.getElementById('rGold').value), completed: false }]);
+                addToast("Gate Opened.", "combat"); toggleModal('raid', false);
+              }}>Open Gate</button>
+            </ModalWrapper>
+          )}
+
+          {modals.boss && (
+            <ModalWrapper title="Summon Boss" onClose={() => toggleModal('boss', false)} borderClass="border-red-500" shadowClass="shadow-[0_0_40px_#e53e3e44]">
+              <label className="sl-modal-label text-red-400">Boss Name (Habit to Break)</label><input id="bName" className="sl-modal-input border-red-500/50" placeholder="e.g. Sugar Addiction" />
+              <label className="sl-modal-label text-red-400">Required XP</label><input id="bXP" type="number" defaultValue="500" className="sl-modal-input border-red-500/50" />
+              <label className="sl-modal-label text-red-400">Penalty (Dark Crystals)</label><input id="bPen" type="number" defaultValue="10" className="sl-modal-input border-red-500/50" />
+              <button className="bg-gradient-to-r from-red-600 to-red-900 text-white font-bold w-full py-3 mt-2 text-lg rounded uppercase shadow-[0_0_15px_#e53e3e66]" onClick={()=>{
+                const n = document.getElementById('bName').value; if(!n) return;
+                setBosses(bs =>[...bs, { id: Date.now(), name: n, xpReq: parseInt(document.getElementById('bXP').value), gold: parseInt(document.getElementById('bXP').value)*2, penalty: parseInt(document.getElementById('bPen').value), completed: false, active: true }]);
+                addToast("Boss Summoned. Prepare yourself.", "combat"); toggleModal('boss', false);
+              }}>Summon Entity</button>
+            </ModalWrapper>
+          )}
+
+          {modals.rival && <AddRivalModal onClose={()=>toggleModal('rival', false)} onAdd={r=>{setRivals(rs=>[...rs,r]); addToast("New Rival Registered in System.", "combat");}} />}
+
+          {/* DAILY LOG VIEWER MODAL */}
+          {dailyLogModal !== null && (
+            <div className="fixed inset-0 flex items-center justify-center z-[1000] sl-modal-bg fade-in p-4">
+              <div className="sl-modal-box w-full max-w-2xl border-2 border-purple-500 shadow-[0_0_40px_#a259ff44]">
+                <button className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl font-black transition-colors" onClick={()=>setDailyLogModal(null)}>&times;</button>
+                <div className="sl-modal-title">📖 Today's Journal Log</div>
+                <pre className="bg-[#0f1115] rounded-lg p-4 border border-purple-500/30 text-sm text-gray-300 whitespace-pre-wrap max-h-[60vh] overflow-y-auto font-mono leading-relaxed">{dailyLogModal}</pre>
+                <button className="sl-btn w-full py-2 mt-4 text-sm uppercase tracking-widest" onClick={()=>setDailyLogModal(null)}>Close</button>
+              </div>
+            </div>
+          )}
+          {/* FIREFOX SYNC MODAL */}
+          {ffSyncModal && (
+            <ModalWrapper title="Vault Sync Setup" onClose={() => setFfSyncModal(false)} borderClass="border-yellow-500" shadowClass="shadow-[0_0_40px_#ecc94b44]">
+              <div className="text-center mb-4">
+                <div className="text-4xl mb-2">🦊</div>
+                <p className="text-yellow-300 font-bold text-sm mb-2">Firefox / Linux Detected</p>
+                <p className="text-gray-400 text-sm">Direct folder access (<code className="text-purple-400">showDirectoryPicker</code>) is not supported in Firefox. Instead, your logs will be <strong className="text-white">downloaded as .md files</strong> — just move them into your Obsidian vault folder.</p>
+              </div>
+              <div className="bg-[#0f1115] rounded-lg p-4 border border-yellow-500/30 text-sm text-gray-300 mb-4 space-y-2">
+                <div className="flex gap-2 items-start"><span className="text-yellow-400 font-bold">1.</span><span>Enable download sync below — logs append to today's .md file.</span></div>
+                <div className="flex gap-2 items-start"><span className="text-yellow-400 font-bold">2.</span><span>Each time you submit a confession, the file auto-downloads.</span></div>
+                <div className="flex gap-2 items-start"><span className="text-yellow-400 font-bold">3.</span><span>Move the file to your Vault: <code className="text-purple-300">~/YourVault/Journal/</code></span></div>
+                <div className="flex gap-2 items-start"><span className="text-yellow-400 font-bold">4.</span><span>You can also upload an existing note to append to it.</span></div>
+              </div>
+              <button className="sl-btn w-full py-3 font-bold uppercase tracking-widest shadow-[0_0_15px_#a259ff44]" onClick={()=>{
+                setVaultLinkedName("⬇ Download Mode (Firefox)");
+                setFfSyncModal(false);
+                addToast("✅ Firefox Download Sync enabled!", "system");
+              }}>Enable Download Sync</button>
+            </ModalWrapper>
+          )}
+
+          {modals.duel && (() => {
+            const r = modals.duel;
+            const rRankIdx = rankOrder.indexOf(r.rank);
+            const isUnder = currentRankIdx < rRankIdx;
+            return (
+              <div className="fixed inset-0 flex items-center justify-center z-[1000] sl-modal-bg fade-in p-4">
+                <div className={`sl-modal-box w-full max-w-md border-2 ${isUnder ? 'border-red-500 shadow-[0_0_40px_#e53e3e55]' : 'border-purple-500 shadow-[0_0_40px_#a259ff55]'}`}>
+                  <button className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl font-black transition-colors" onClick={()=>toggleModal('duel', null)}>&times;</button>
+                  <div className="text-center mb-6">
+                    <h2 className="text-3xl font-black uppercase tracking-widest mb-1">{r.name}</h2>
+                    <div className="inline-block bg-gray-800 px-3 py-1 rounded border border-gray-600 text-sm font-bold">Rank {r.rank} {r.type}</div>
+                  </div>
+                  <div className="bg-[#1a1c23] border border-gray-600 rounded-lg p-4 mb-6 shadow-inner text-left">
+                     <h4 className="text-xs text-gray-500 uppercase font-black mb-3 tracking-widest border-b border-gray-700 pb-1">Combat Intel</h4>
+                     <div className="grid grid-cols-2 gap-4 mb-3">
+                        <div><span className="text-purple-400 font-bold">Focus:</span> {r.focus}</div>
+                        <div><span className="text-red-400 font-bold">STR:</span> {r.str}</div>
+                        <div><span className="text-green-400 font-bold">INT:</span> {r.int}</div>
+                     </div>
+                     <div><span className="text-yellow-500 font-bold text-sm block mb-1">Achievements:</span><span className="text-gray-300 text-sm italic">{r.achievements}</span></div>
+                  </div>
+                  {isUnder ? (
+                    <div className="bg-red-900/20 border border-red-500 p-4 rounded-lg text-center mb-6 pulse-red">
+                      <h3 className="text-red-500 font-black text-xl mb-2 uppercase">⚠️ FATAL WARNING</h3>
+                      <p className="text-sm text-gray-300">System detects massive power disparity. Your rank ({currentRank.tier}) is lower than the Rival ({r.rank}). Engaging will likely result in crushing defeat.</p>
+                    </div>
+                  ) : (
+                    <div className="bg-green-900/20 border border-green-500 p-4 rounded-lg text-center mb-6">
+                      <h3 className="text-green-400 font-black text-xl mb-2 uppercase">✅ MATCH APPROVED</h3>
+                      <p className="text-sm text-gray-300">Your stats align. You are authorized to initiate combat.</p>
+                    </div>
+                  )}
+                  <div className="flex gap-4">
+                    <button className="bg-gray-700 text-white flex-1 py-3 rounded font-bold uppercase hover:bg-gray-600" onClick={()=>toggleModal('duel', null)}>Retreat</button>
+                    <button className={`flex-1 py-3 rounded font-black uppercase shadow-lg ${isUnder ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-gradient-to-r from-purple-600 to-purple-400 text-white'}`} onClick={()=>{
+                      toggleModal('duel', null);
+                      if (isUnder) {
+                         if(Math.random() > 0.95) { setXP(x => x + 300); addToast(`🤯 MIRACLE WIN against ${r.name}! +300 XP`, "loot"); }
+                         else { setDarkCrystals(d => d + 20); setXP(x => Math.max(0, x - 50)); addToast(`🩸 CRUSHED by ${r.name}. Lost 50 XP, gained 20 DC.`, "penalty"); }
+                      } else {
+                         if(Math.random() > 0.20) { setXP(x => x + 100); setGold(g => g + 30); addToast(`🏆 Defeated ${r.name}! +100 XP, +30 Gold`, "combat"); }
+                         else { setDarkCrystals(d => d + 5); addToast(`😤 Narrowly lost to ${r.name}. System grants +5 DC`, "system"); }
+                      }
+                    }}>{isUnder ? 'FIGHT ANYWAY' : 'ENGAGE COMBAT'}</button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
