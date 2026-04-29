@@ -1,0 +1,32 @@
+{
+  "name": "Solo Leveling Productivity",
+  "short_name": "Solo Leveling",
+  "description": "Solo Leveling Productivity System",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f1115",
+  "theme_color": "#0f1115",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%230f1115'/%3E%3Ccircle cx='256' cy='256' r='200' fill='none' stroke='%23a259ff' stroke-width='20'/%3E%3Ctext x='256' y='310' text-anchor='middle' font-size='200' fill='%23a259ff'%3E%E2%9A%94%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "lang": "en"
+}
